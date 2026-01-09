@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import toast from 'react-hot-toast'; // Toaster 已经移到 App.jsx
+import FileBrowser from './components/FileBrowser';
 // import './index.css'; // 这行不需要，index.css 应该在 main.jsx 中导入
 
 // --- 语言字典 ---
 const strings = {
   zh: {
-    dashboardTitle: '计算流体力学问答', // 修复了重复
+    dashboardTitle: '计算流体力学问答',
     welcome: '欢迎',
     signOut: '登出',
     newSimulationTitle: '创建新的仿真任务',
@@ -21,6 +22,8 @@ const strings = {
     status: '状态',
     time: '时间',
     downloadButton: '下载结果 (.zip)',
+    downloadError: '下载失败',
+    browseFilesButton: '浏览文件',
     hideButton: '隐藏',
     showHiddenButton: '显示隐藏的任务',
     showNormalButton: '显示正常任务',
@@ -31,7 +34,7 @@ const strings = {
     taskStatusUpdateToast: '状态更新为',
   },
   en: {
-    dashboardTitle: 'CFDQandA', // 修复了重复
+    dashboardTitle: 'CFDQandA',
     welcome: 'Welcome',
     signOut: 'Sign Out',
     newSimulationTitle: 'Create a new simulation task',
@@ -46,6 +49,8 @@ const strings = {
     status: 'Status',
     time: 'Time',
     downloadButton: 'Download Results (.zip)',
+    downloadError: 'Download failed',
+    browseFilesButton: 'Browse Files',
     hideButton: 'Hide',
     showHiddenButton: 'Show Hidden Tasks',
     showNormalButton: 'Show Normal Tasks',
@@ -64,6 +69,8 @@ export default function Dashboard({ session, language, setLanguage }) {
   const [newPrompt, setNewPrompt] = useState('');
   const [hiddenSimulations, setHiddenSimulations] = useState(new Set());
   const [showHiddenView, setShowHiddenView] = useState(false);
+  const [selectedSimulation, setSelectedSimulation] = useState(null);
+  const [showFileBrowser, setShowFileBrowser] = useState(false);
   
   // --- 已修改：不再需要本地的 language state，直接使用 prop ---
   const t = strings[language];
@@ -91,6 +98,30 @@ export default function Dashboard({ session, language, setLanguage }) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  // 下载ZIP文件
+  const handleDownloadZip = async (simulation) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('simulation_results')
+        .download(simulation.result_data.zip_storage_path);
+      
+      if (error) throw error;
+      
+      // 创建下载链接，文件名格式为 results-{task_id}.zip
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `results-${simulation.id}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading ZIP file:', error);
+      toast.error(t.downloadError);
+    }
   };
   
   const handleHideSimulation = (idToHide) => {
@@ -304,13 +335,6 @@ export default function Dashboard({ session, language, setLanguage }) {
         ) : (
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {simulations.map((sim) => {
-              let downloadUrl = null;
-              if (sim.status === 'completed' && sim.result_data?.storage_path) {
-                const { data } = supabase.storage
-                  .from('simulation_results')
-                  .getPublicUrl(sim.result_data.storage_path);
-                downloadUrl = data.publicUrl;
-              }
               return (
                 <li key={sim.id} className="simulation-card">
                   <div className="card-header">
@@ -343,11 +367,28 @@ export default function Dashboard({ session, language, setLanguage }) {
                     </p>
                     <div className="card-time-row">
                       <small>{t.time}: {new Date(sim.created_at).toLocaleString()}</small>
-                      {downloadUrl && (
-                        <a href={downloadUrl} download className="download-link">
-                          {t.downloadButton}
-                        </a>
-                      )}
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        {sim.status === 'completed' && sim.result_data?.file_tree && (
+                          <button
+                            className="browse-files-button"
+                            onClick={() => {
+                              setSelectedSimulation(sim);
+                              setShowFileBrowser(true);
+                            }}
+                          >
+                            {t.browseFilesButton}
+                          </button>
+                        )}
+                        {sim.status === 'completed' && sim.result_data?.zip_storage_path && (
+                          <button
+                            className="download-link"
+                            onClick={() => handleDownloadZip(sim)}
+                            style={{ cursor: 'pointer', border: 'none' }}
+                          >
+                            {t.downloadButton}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </li>
@@ -356,6 +397,22 @@ export default function Dashboard({ session, language, setLanguage }) {
           </ul>
         )}
       </div>
+      
+      {/* 文件浏览器 Modal */}
+      {showFileBrowser && selectedSimulation && selectedSimulation.result_data?.file_tree && (
+        <FileBrowser
+          jobId={selectedSimulation.id}
+          userId={session.user.id}
+          fileTree={selectedSimulation.result_data.file_tree}
+          storageBasePath={selectedSimulation.result_data.storage_base_path}
+          language={language}
+          apiUrl={API_URL}
+          onClose={() => {
+            setShowFileBrowser(false);
+            setSelectedSimulation(null);
+          }}
+        />
+      )}
     </div>
   );
 }
