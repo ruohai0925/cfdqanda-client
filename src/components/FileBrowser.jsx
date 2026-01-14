@@ -500,7 +500,7 @@ export default function FileBrowser({ jobId, userId, fileTree, storageBasePath, 
                 )}
               </div>
             ) : (
-              <p className="file-browser-empty">请选择一个文件查看</p>
+              <p className="file-browser-empty">Please select a file</p>
             )}
           </div>
         </div>
