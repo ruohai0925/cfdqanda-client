@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
+import { Toaster } from 'react-hot-toast' // <--- 1. 必须导入这个！
 import Auth from './Auth'
-import Dashboard from './Dashboard' // 1. 在这里导入我们新建的 Dashboard 组件
+import Dashboard from './Dashboard'
 
 function App() {
   const [session, setSession] = useState(null)
-  const [language, setLanguage] = useState('zh') // 默认使用中文
+  const [language, setLanguage] = useState('zh') 
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -19,17 +20,14 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // 注意：我们把登出逻辑从 App.jsx 中移除了，因为它现在属于 Dashboard 的一部分
-  // const handleSignOut = async () => { ... } // 这段代码可以删除了
-
   return (
     <div className="container" style={{ padding: '50px 20px 100px 20px' }}>
+      {/* 2. 必须把 Toaster 组件放在这里，提示框才能弹出来！*/}
+      <Toaster position="top-center" />
+      
       {!session ? (
         <Auth language={language} setLanguage={setLanguage} />
       ) : (
-        // 2. 当 session 存在时，渲染 Dashboard 组件
-        //    我们把整个 session 对象作为 prop 传递给它
-        //    `key` 是一个特殊的 prop，能确保在用户切换时组件被正确地重新渲染
         <Dashboard key={session.user.id} session={session} language={language} setLanguage={setLanguage} />
       )}
     </div>
