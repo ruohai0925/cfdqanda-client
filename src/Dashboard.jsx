@@ -32,6 +32,13 @@ const strings = {
     taskRestoredToast: '任务已恢复',
     taskQueuedToast: '新任务已排队!',
     taskStatusUpdateToast: '状态更新为',
+    modelSettings: '模型设置',
+    modelSettingsHint: '（可选）使用自己的 LLM 配置',
+    modelProvider: 'LLM 提供商',
+    modelVersion: '模型版本',
+    apiKey: 'API Key',
+    apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
+    useServerDefault: '使用服务器默认配置',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -59,6 +66,13 @@ const strings = {
     taskRestoredToast: 'Task has been restored',
     taskQueuedToast: 'New task has been queued!',
     taskStatusUpdateToast: 'status updated to',
+    modelSettings: 'Model Settings',
+    modelSettingsHint: '(Optional) Use your own LLM configuration',
+    modelProvider: 'LLM Provider',
+    modelVersion: 'Model Version',
+    apiKey: 'API Key',
+    apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
+    useServerDefault: 'Use server default',
   }
 };
 
@@ -71,6 +85,12 @@ export default function Dashboard({ session, language, setLanguage }) {
   const [showHiddenView, setShowHiddenView] = useState(false);
   const [selectedSimulation, setSelectedSimulation] = useState(null);
   const [showFileBrowser, setShowFileBrowser] = useState(false);
+
+  // --- 模型设置状态 ---
+  const [showModelSettings, setShowModelSettings] = useState(false);
+  const [modelProvider, setModelProvider] = useState('');
+  const [modelVersion, setModelVersion] = useState('');
+  const [apiKey, setApiKey] = useState('');
   
   // --- 已修改：不再需要本地的 language state，直接使用 prop ---
   const t = strings[language];
@@ -255,16 +275,28 @@ export default function Dashboard({ session, language, setLanguage }) {
     setLoading(true);
     try {
       const { user } = session;
+
+      // 构建请求体，仅在用户配置了模型设置时发送 llm_config
+      const requestBody = { prompt: newPrompt, user_id: user.id };
+      if (showModelSettings && (modelProvider || modelVersion || apiKey)) {
+        const llmConfig = {};
+        if (modelProvider) llmConfig.model_provider = modelProvider;
+        if (modelVersion) llmConfig.model_version = modelVersion;
+        if (apiKey) llmConfig.api_key = apiKey;
+        requestBody.llm_config = llmConfig;
+      }
+
       const response = await fetch(`${API_URL}/api/v1/simulations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: newPrompt, user_id: user.id }),
+        body: JSON.stringify(requestBody),
       });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to submit request');
       }
       setNewPrompt('');
+      setApiKey(''); // 提交后立即清除前端内存中的 API key
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -302,6 +334,95 @@ export default function Dashboard({ session, language, setLanguage }) {
             onChange={(e) => setNewPrompt(e.target.value)}
             rows="4"
           />
+          {/* --- 模型设置折叠区 --- */}
+          <div style={{ margin: '12px 0' }}>
+            <button
+              type="button"
+              onClick={() => setShowModelSettings(!showModelSettings)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#6200ea',
+                cursor: 'pointer',
+                padding: 0,
+                fontSize: '0.9rem',
+              }}
+            >
+              {showModelSettings ? '▼' : '▶'} {t.modelSettings} {t.modelSettingsHint}
+            </button>
+
+            {showModelSettings && (
+              <div style={{
+                marginTop: '10px',
+                padding: '14px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '6px',
+                background: '#fafafa',
+              }}>
+                {/* Provider 下拉 */}
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    {t.modelProvider}
+                  </label>
+                  <select
+                    value={modelProvider}
+                    onChange={(e) => {
+                      setModelProvider(e.target.value);
+                      setModelVersion('');
+                      setApiKey('');
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                  >
+                    <option value="">{t.useServerDefault}</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="ollama">Ollama (Local)</option>
+                  </select>
+                </div>
+
+                {/* Model Version 输入框 */}
+                {modelProvider && (
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {t.modelVersion}
+                    </label>
+                    <input
+                      type="text"
+                      className="inputField"
+                      value={modelVersion}
+                      onChange={(e) => setModelVersion(e.target.value)}
+                      placeholder={
+                        modelProvider === 'openai' ? 'gpt-4o' :
+                        modelProvider === 'anthropic' ? 'claude-sonnet-4-5-20250929' :
+                        modelProvider === 'ollama' ? 'qwen2.5:32b-instruct' : ''
+                      }
+                      style={{ marginBottom: 0 }}
+                    />
+                  </div>
+                )}
+
+                {/* API Key 密码输入（仅 openai / anthropic 显示） */}
+                {(modelProvider === 'openai' || modelProvider === 'anthropic') && (
+                  <div style={{ marginBottom: '4px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {t.apiKey}
+                    </label>
+                    <input
+                      type="password"
+                      className="inputField"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder={modelProvider === 'openai' ? 'sk-...' : 'sk-ant-...'}
+                      autoComplete="off"
+                      style={{ marginBottom: '4px' }}
+                    />
+                    <small style={{ color: '#888', fontSize: '0.78rem' }}>{t.apiKeyHint}</small>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <button className="button-block" type="submit" disabled={loading}>
             {loading ? t.submittingButton : t.submitButton}
           </button>
