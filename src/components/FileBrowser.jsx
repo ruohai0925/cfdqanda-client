@@ -55,7 +55,7 @@ const fileBrowserStrings = {
   }
 };
 
-export default function FileBrowser({ jobId, userId, fileTree, storageBasePath, language, onClose, apiUrl }) {
+export default function FileBrowser({ jobId, userId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl }) {
   const [expandedDirs, setExpandedDirs] = useState(new Set(['output'])); // 默认展开output目录
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
@@ -325,11 +325,11 @@ export default function FileBrowser({ jobId, userId, fileTree, storageBasePath, 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           file_path: feedbackFile.path,
           feedback_content: feedbackContent,
-          user_id: userId,
         }),
       });
 

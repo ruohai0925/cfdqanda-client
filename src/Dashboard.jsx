@@ -274,10 +274,8 @@ export default function Dashboard({ session, language, setLanguage }) {
     }
     setLoading(true);
     try {
-      const { user } = session;
-
-      // 构建请求体，仅在用户配置了模型设置时发送 llm_config
-      const requestBody = { prompt: newPrompt, user_id: user.id };
+      // Build request body (user_id comes from JWT, not from body)
+      const requestBody = { prompt: newPrompt };
       if (showModelSettings && (modelProvider || modelVersion || apiKey)) {
         const llmConfig = {};
         if (modelProvider) llmConfig.model_provider = modelProvider;
@@ -288,7 +286,10 @@ export default function Dashboard({ session, language, setLanguage }) {
 
       const response = await fetch(`${API_URL}/api/v1/simulations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify(requestBody),
       });
       if (!response.ok) {
@@ -524,6 +525,7 @@ export default function Dashboard({ session, language, setLanguage }) {
         <FileBrowser
           jobId={selectedSimulation.id}
           userId={session.user.id}
+          accessToken={session.access_token}
           fileTree={selectedSimulation.result_data.file_tree}
           storageBasePath={selectedSimulation.result_data.storage_base_path}
           language={language}
