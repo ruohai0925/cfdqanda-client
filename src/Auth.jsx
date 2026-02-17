@@ -2,6 +2,7 @@
 import { useState } from 'react'
 // 导入Supabase客户端，用于与后端数据库和认证服务通信
 import { supabase } from './supabaseClient'
+import toast from 'react-hot-toast'
 
 // --- 语言字典 ---
 const strings = {
@@ -54,10 +55,10 @@ export default function Auth({ language, setLanguage }) {
       // 调用Supabase的登录方法，使用邮箱和密码进行身份验证
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error // 如果有错误，抛出异常
-      alert(t.loginSuccess) // 登录成功提示
+      toast.success(t.loginSuccess) // 登录成功提示
     } catch (error) {
       // 捕获错误并显示给用户，优先显示详细错误描述
-      alert(error.error_description || error.message)
+      toast.error(error.error_description || error.message)
     } finally {
       setLoading(false) // 无论成功还是失败，都要结束加载状态
     }
@@ -73,10 +74,10 @@ export default function Auth({ language, setLanguage }) {
       const { data, error } = await supabase.auth.signUp({ email, password })
       if (error) throw error // 如果有错误，抛出异常
       // 注册成功后提示用户检查邮箱（如果开启了邮箱验证功能）
-      alert(t.signupSuccess) 
+      toast.success(t.signupSuccess)
     } catch (error) {
       // 捕获并显示注册过程中的错误
-      alert(error.error_description || error.message)
+      toast.error(error.error_description || error.message)
     } finally {
       setLoading(false) // 结束加载状态
     }
