@@ -39,6 +39,10 @@ const strings = {
     apiKey: 'API Key',
     apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
     useServerDefault: '使用服务器默认配置',
+    promptRequired: '请输入仿真需求！',
+    apiKeyRequired: '选择了 {provider} 但未填写 API Key，请输入你的 API Key。',
+    apiKeyInvalidOpenAI: 'OpenAI API Key 应以 "sk-" 开头，请检查格式。',
+    apiKeyInvalidAnthropic: 'Anthropic API Key 应以 "sk-ant-" 开头，请检查格式。',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -73,6 +77,10 @@ const strings = {
     apiKey: 'API Key',
     apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
     useServerDefault: 'Use server default',
+    promptRequired: 'Please enter your simulation requirements!',
+    apiKeyRequired: 'You selected {provider} but did not provide an API Key. Please enter your API Key.',
+    apiKeyInvalidOpenAI: 'OpenAI API Key should start with "sk-". Please check the format.',
+    apiKeyInvalidAnthropic: 'Anthropic API Key should start with "sk-ant-". Please check the format.',
   }
 };
 
@@ -266,12 +274,28 @@ export default function Dashboard({ session, language, setLanguage }) {
   }, [session, t.taskQueuedToast, t.taskStatusUpdateToast]); 
 
   const handleSubmit = async (event) => {
-    // ... (handleSubmit 函数内容保持不变) ...
     event.preventDefault();
     if (!newPrompt.trim()) {
-      toast.error('Please enter your simulation requirements!');
+      toast.error(t.promptRequired);
       return;
     }
+
+    // Validate API key when a cloud provider is selected
+    if (showModelSettings && (modelProvider === 'openai' || modelProvider === 'anthropic')) {
+      if (!apiKey.trim()) {
+        toast.error(t.apiKeyRequired.replace('{provider}', modelProvider === 'openai' ? 'OpenAI' : 'Anthropic'));
+        return;
+      }
+      if (modelProvider === 'openai' && !apiKey.startsWith('sk-')) {
+        toast.error(t.apiKeyInvalidOpenAI);
+        return;
+      }
+      if (modelProvider === 'anthropic' && !apiKey.startsWith('sk-ant-')) {
+        toast.error(t.apiKeyInvalidAnthropic);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       // Build request body (user_id comes from JWT, not from body)
@@ -424,7 +448,7 @@ export default function Dashboard({ session, language, setLanguage }) {
             )}
           </div>
 
-          <button className="button-block" type="submit" disabled={loading}>
+          <button className="button-block" type="submit" disabled={loading || !newPrompt.trim()}>
             {loading ? t.submittingButton : t.submitButton}
           </button>
         </form>
