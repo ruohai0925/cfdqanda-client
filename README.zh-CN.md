@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+> **许可证：** [PolyForm Strict 1.0.0](https://polyformproject.org/licenses/strict/1.0.0/) — 源码仅供个人及非商业用途查阅和使用，禁止商业使用。
+
 计算流体力学问答客户端（CFDQandA Client）是一个基于 React + Vite 构建的前端应用，用于管理和提交计算流体力学仿真任务。
 
 ## 项目简介

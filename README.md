@@ -2,6 +2,8 @@
 
 [中文](README.zh-CN.md)
 
+> **License:** [PolyForm Strict 1.0.0](https://polyformproject.org/licenses/strict/1.0.0/) — source available for personal and non-commercial use only. Commercial use is prohibited.
+
 A React + Vite front-end for managing and submitting computational fluid dynamics (CFD) simulation tasks.
 
 ## Overview
