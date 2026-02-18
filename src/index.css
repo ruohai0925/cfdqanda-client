@@ -92,18 +92,112 @@ body {
     color: #333;
   }
 
-  .hide-button {
+  /* Filter tabs */
+  .filter-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+  }
+
+  .filter-tab {
     background: transparent;
-    border: 1px solid #ccc;
+    border: 1px solid #e0e0e0;
     color: #666;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-tab:hover {
+    border-color: #6200ea;
+    color: #6200ea;
+  }
+  .filter-tab-active {
+    background: #6200ea;
+    border-color: #6200ea;
+    color: white;
+  }
+  .filter-tab-active:hover {
+    background: #5000b9;
+    border-color: #5000b9;
+    color: white;
+  }
+  .filter-count {
+    background: rgba(255,255,255,0.3);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .filter-tab-active .filter-count {
+    background: rgba(255,255,255,0.3);
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .status-queued {
+    background: #fff3e0;
+    color: #e67e22;
+  }
+  .status-running {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+  .status-completed {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  .status-failed {
+    background: #ffebee;
+    color: #c62828;
+  }
+
+  /* Delete button */
+  .delete-button {
+    background: transparent;
+    border: 1px solid #e57373;
+    color: #e57373;
     padding: 4px 8px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.8rem;
+    transition: all 0.2s;
   }
-  .hide-button:hover {
-    background: #f1f1f1;
-    border-color: #999;
+  .delete-button:hover {
+    background: #ffebee;
+    border-color: #c62828;
+    color: #c62828;
+  }
+
+  /* Prompt truncation */
+  .card-prompt {
+    word-break: break-word;
+    line-height: 1.5;
+  }
+  .expand-button {
+    background: none;
+    border: none;
+    color: #6200ea;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0 4px;
+    text-decoration: underline;
+  }
+  .expand-button:hover {
+    color: #5000b9;
   }
 
   /* 卡片主体：用于缩进的内容 */

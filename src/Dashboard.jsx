@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import toast from 'react-hot-toast'; // Toaster 已经移到 App.jsx
+import toast from 'react-hot-toast';
 import FileBrowser from './components/FileBrowser';
-// import './index.css'; // 这行不需要，index.css 应该在 main.jsx 中导入
 
-// --- 语言字典 ---
+// --- Language dictionary ---
 const strings = {
   zh: {
     dashboardTitle: '计算流体力学问答',
@@ -17,6 +16,7 @@ const strings = {
     historyTitle: '历史记录',
     loadingHistory: '加载历史记录中...',
     noHistory: '你还没有任何仿真记录。',
+    noMatchingHistory: '当前筛选条件下没有任务。',
     case: '任务',
     demand: '需求',
     status: '状态',
@@ -24,14 +24,17 @@ const strings = {
     downloadButton: '下载结果 (.zip)',
     downloadError: '下载失败',
     browseFilesButton: '浏览文件',
-    hideButton: '隐藏',
-    showHiddenButton: '显示隐藏的任务',
-    showNormalButton: '显示正常任务',
-    restoreButton: '恢复',
-    taskHiddenToast: '任务已隐藏',
-    taskRestoredToast: '任务已恢复',
+    deleteButton: '删除',
+    undoButton: '撤销',
+    taskDeletedToast: '任务已删除',
     taskQueuedToast: '新任务已排队!',
     taskStatusUpdateToast: '状态更新为',
+    showMore: '展开',
+    showLess: '收起',
+    filterAll: '全部',
+    filterActive: '进行中',
+    filterCompleted: '已完成',
+    filterFailed: '失败',
     modelSettings: '模型设置',
     modelSettingsHint: '（可选）使用自己的 LLM 配置',
     modelProvider: 'LLM 提供商',
@@ -55,6 +58,7 @@ const strings = {
     historyTitle: 'History',
     loadingHistory: 'Loading history...',
     noHistory: 'You do not have any simulation records yet.',
+    noMatchingHistory: 'No tasks match the current filter.',
     case: 'Case',
     demand: 'Demand',
     status: 'Status',
@@ -62,14 +66,17 @@ const strings = {
     downloadButton: 'Download Results (.zip)',
     downloadError: 'Download failed',
     browseFilesButton: 'Browse Files',
-    hideButton: 'Hide',
-    showHiddenButton: 'Show Hidden Tasks',
-    showNormalButton: 'Show Normal Tasks',
-    restoreButton: 'Restore',
-    taskHiddenToast: 'Task has been hidden',
-    taskRestoredToast: 'Task has been restored',
+    deleteButton: 'Delete',
+    undoButton: 'Undo',
+    taskDeletedToast: 'Task deleted',
     taskQueuedToast: 'New task has been queued!',
     taskStatusUpdateToast: 'status updated to',
+    showMore: 'more',
+    showLess: 'less',
+    filterAll: 'All',
+    filterActive: 'Active',
+    filterCompleted: 'Completed',
+    filterFailed: 'Failed',
     modelSettings: 'Model Settings',
     modelSettingsHint: '(Optional) Use your own LLM configuration',
     modelProvider: 'LLM Provider',
@@ -84,60 +91,42 @@ const strings = {
   }
 };
 
-// --- 已修改：现在从 props 接收 language 和 setLanguage ---
+const PROMPT_TRUNCATE_LENGTH = 120;
+const DELETE_UNDO_TIMEOUT = 10000; // 10 seconds
+
 export default function Dashboard({ session, language, setLanguage }) {
   const [loading, setLoading] = useState(true);
   const [simulations, setSimulations] = useState([]);
   const [newPrompt, setNewPrompt] = useState('');
-  const [hiddenSimulations, setHiddenSimulations] = useState(new Set());
-  const [showHiddenView, setShowHiddenView] = useState(false);
   const [selectedSimulation, setSelectedSimulation] = useState(null);
   const [showFileBrowser, setShowFileBrowser] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [expandedPrompts, setExpandedPrompts] = useState(new Set());
 
-  // --- 模型设置状态 ---
+  // Model settings state
   const [showModelSettings, setShowModelSettings] = useState(false);
   const [modelProvider, setModelProvider] = useState('');
   const [modelVersion, setModelVersion] = useState('');
   const [apiKey, setApiKey] = useState('');
-  
-  // --- 已修改：不再需要本地的 language state，直接使用 prop ---
+
+  // Pending deletes: Map of jobId -> { timeoutId, sim }
+  const pendingDeletes = useRef(new Map());
+
   const t = strings[language];
-
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
-
-  // localStorage 辅助函数
-  const getHiddenSimulationsFromStorage = () => {
-    try {
-      const stored = localStorage.getItem(`hidden_simulations_${session.user.id}`);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch (error) {
-      console.error('Error loading hidden simulations:', error);
-      return new Set();
-    }
-  };
-
-  const saveHiddenSimulationsToStorage = (hiddenSet) => {
-    try {
-      localStorage.setItem(`hidden_simulations_${session.user.id}`, JSON.stringify([...hiddenSet]));
-    } catch (error) {
-      console.error('Error saving hidden simulations:', error);
-    }
-  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
 
-  // 下载ZIP文件
+  // Download ZIP
   const handleDownloadZip = async (simulation) => {
     try {
       const { data, error } = await supabase.storage
         .from('simulation_results')
         .download(simulation.result_data.zip_storage_path);
-      
       if (error) throw error;
-      
-      // 创建下载链接，文件名格式为 results-{task_id}.zip
+
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
@@ -151,86 +140,104 @@ export default function Dashboard({ session, language, setLanguage }) {
       toast.error(t.downloadError);
     }
   };
-  
-  const handleHideSimulation = (idToHide) => {
-    // 添加到隐藏列表
-    const newHiddenSet = new Set(hiddenSimulations);
-    newHiddenSet.add(idToHide);
-    setHiddenSimulations(newHiddenSet);
-    
-    // 保存到 localStorage
-    saveHiddenSimulationsToStorage(newHiddenSet);
-    
-    // 从显示列表中移除
-    setSimulations((currentSimulations) =>
-      currentSimulations.filter((sim) => sim.id !== idToHide)
-    );
-    toast.success(t.taskHiddenToast);
-  };
 
-  const handleRestoreSimulation = async (idToRestore) => {
-    // 从隐藏列表中移除
-    const newHiddenSet = new Set(hiddenSimulations);
-    newHiddenSet.delete(idToRestore);
-    setHiddenSimulations(newHiddenSet);
-    
-    // 保存到 localStorage
-    saveHiddenSimulationsToStorage(newHiddenSet);
-    
-    // 切换回正常视图
-    setShowHiddenView(false);
-    
-    // 重新获取数据以显示恢复的simulation
-    await getSimulations(newHiddenSet);
-    toast.success(t.taskRestoredToast);
-  };
+  // Soft delete with undo
+  const handleDelete = useCallback((sim) => {
+    const jobId = sim.id;
+    // Optimistically remove from UI
+    setSimulations((prev) => prev.filter((s) => s.id !== jobId));
 
-  const toggleView = () => {
-    if (showHiddenView) {
-      // 切换到正常视图
-      setShowHiddenView(false);
-      getSimulations(hiddenSimulations);
-    } else {
-      // 切换到隐藏视图
-      setShowHiddenView(true);
-      getHiddenSimulations();
-    }
-  };
-
-  async function getSimulations(hiddenSet = hiddenSimulations) {
-    try {
-      setLoading(true);
-      const { data, error, status } = await supabase
-        .from('simulations')
-        .select(`id, created_at, prompt, status, result_data`)
-        .order('created_at', { ascending: false }); 
-
-      if (error && status !== 406) throw error;
-      if (data) {
-        // 过滤掉隐藏的 simulations
-        const filteredData = data.filter(sim => !hiddenSet.has(sim.id));
-        setSimulations(filteredData);
+    // Set a timeout to actually call the DELETE API
+    const timeoutId = setTimeout(async () => {
+      pendingDeletes.current.delete(jobId);
+      try {
+        const resp = await fetch(`${API_URL}/api/v1/simulations/${jobId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+        });
+        if (!resp.ok) {
+          const errData = await resp.json();
+          throw new Error(errData.detail || 'Delete failed');
+        }
+      } catch (err) {
+        console.error('Delete API call failed:', err);
+        // Restore on failure
+        setSimulations((prev) => [sim, ...prev].sort((a, b) =>
+          new Date(b.created_at) - new Date(a.created_at)
+        ));
+        toast.error(err.message);
       }
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+    }, DELETE_UNDO_TIMEOUT);
 
-  async function getHiddenSimulations() {
+    pendingDeletes.current.set(jobId, { timeoutId, sim });
+
+    // Show toast with undo button
+    toast((toastObj) => (
+      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {t.taskDeletedToast}
+        <button
+          onClick={() => {
+            // Undo: cancel timeout, restore simulation
+            const pending = pendingDeletes.current.get(jobId);
+            if (pending) {
+              clearTimeout(pending.timeoutId);
+              pendingDeletes.current.delete(jobId);
+            }
+            setSimulations((prev) => [sim, ...prev].sort((a, b) =>
+              new Date(b.created_at) - new Date(a.created_at)
+            ));
+            toast.dismiss(toastObj.id);
+          }}
+          style={{
+            background: '#6200ea',
+            color: 'white',
+            border: 'none',
+            padding: '4px 10px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '0.85rem',
+          }}
+        >
+          {t.undoButton}
+        </button>
+      </span>
+    ), { duration: DELETE_UNDO_TIMEOUT });
+  }, [API_URL, session.access_token, t]);
+
+  // Cleanup pending deletes on unmount
+  useEffect(() => {
+    return () => {
+      pendingDeletes.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
+    };
+  }, []);
+
+  // Toggle prompt expansion
+  const togglePromptExpand = (simId) => {
+    setExpandedPrompts((prev) => {
+      const next = new Set(prev);
+      if (next.has(simId)) {
+        next.delete(simId);
+      } else {
+        next.add(simId);
+      }
+      return next;
+    });
+  };
+
+  // Fetch simulations from Supabase (only non-deleted)
+  async function getSimulations() {
     try {
       setLoading(true);
       const { data, error, status } = await supabase
         .from('simulations')
-        .select(`id, created_at, prompt, status, result_data`)
-        .order('created_at', { ascending: false }); 
+        .select('id, created_at, prompt, status, result_data, deleted_at')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
 
       if (error && status !== 406) throw error;
       if (data) {
-        // 只显示隐藏的 simulations
-        const hiddenData = data.filter(sim => hiddenSimulations.has(sim.id));
-        setSimulations(hiddenData);
+        setSimulations(data);
       }
     } catch (error) {
       toast.error(error.message);
@@ -240,29 +247,22 @@ export default function Dashboard({ session, language, setLanguage }) {
   }
 
   useEffect(() => {
-    // 从 localStorage 加载隐藏的 simulations
-    const hiddenFromStorage = getHiddenSimulationsFromStorage();
-    setHiddenSimulations(hiddenFromStorage);
-    
-    getSimulations(hiddenFromStorage);
+    getSimulations();
     const subscription = supabase
       .channel('public:simulations')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'simulations', filter: `user_id=eq.${session.user.id}` },
         (payload) => {
+          // Ignore events for deleted simulations
+          if (payload.new?.deleted_at) return;
+
           if (payload.eventType === 'INSERT') {
-            // 检查新插入的 simulation 是否被隐藏
-            if (!hiddenFromStorage.has(payload.new.id)) {
-              setSimulations((prev) => [payload.new, ...prev]);
-              toast.success(t.taskQueuedToast);
-            }
+            setSimulations((prev) => [payload.new, ...prev]);
+            toast.success(t.taskQueuedToast);
           } else if (payload.eventType === 'UPDATE') {
-            // 检查更新的 simulation 是否被隐藏
-            if (!hiddenFromStorage.has(payload.new.id)) {
-              setSimulations((prev) =>
-                prev.map((sim) => sim.id === payload.new.id ? payload.new : sim)
-              );
-              toast.success(`Task ${payload.new.id.substring(0,4)}... ${t.taskStatusUpdateToast}: ${payload.new.status}`);
-            }
+            setSimulations((prev) =>
+              prev.map((sim) => sim.id === payload.new.id ? payload.new : sim)
+            );
+            toast.success(`${payload.new.id.substring(0,8)}... ${t.taskStatusUpdateToast}: ${payload.new.status}`);
           }
         }
       )
@@ -271,7 +271,7 @@ export default function Dashboard({ session, language, setLanguage }) {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [session, t.taskQueuedToast, t.taskStatusUpdateToast]); 
+  }, [session, t.taskQueuedToast, t.taskStatusUpdateToast]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -298,7 +298,6 @@ export default function Dashboard({ session, language, setLanguage }) {
 
     setLoading(true);
     try {
-      // Build request body (user_id comes from JWT, not from body)
       const requestBody = { prompt: newPrompt };
       if (showModelSettings && (modelProvider || modelVersion || apiKey)) {
         const llmConfig = {};
@@ -321,7 +320,7 @@ export default function Dashboard({ session, language, setLanguage }) {
         throw new Error(errorData.detail || 'Failed to submit request');
       }
       setNewPrompt('');
-      setApiKey(''); // 提交后立即清除前端内存中的 API key
+      setApiKey('');
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -329,24 +328,43 @@ export default function Dashboard({ session, language, setLanguage }) {
     }
   };
 
+  // Filter simulations by status
+  const filteredSimulations = simulations.filter((sim) => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'active') return sim.status === 'queued' || sim.status === 'running';
+    return sim.status === statusFilter;
+  });
+
+  // Count by status for filter tab badges
+  const counts = {
+    all: simulations.length,
+    active: simulations.filter((s) => s.status === 'queued' || s.status === 'running').length,
+    completed: simulations.filter((s) => s.status === 'completed').length,
+    failed: simulations.filter((s) => s.status === 'failed').length,
+  };
+
+  const filterTabs = [
+    { key: 'all', label: t.filterAll },
+    { key: 'active', label: t.filterActive },
+    { key: 'completed', label: t.filterCompleted },
+    { key: 'failed', label: t.filterFailed },
+  ];
+
   return (
-    <div>
-      {/* Toaster 已经移到 App.jsx */}
+    <div style={{ maxWidth: '700px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <h2>{t.dashboardTitle}</h2>
           <div>
-            {/* --- 已修改：setLanguage 现在来自 props --- */}
-            <button onClick={() => setLanguage('en')} disabled={language==='en'}>EN</button>
-            <button onClick={() => setLanguage('zh')} disabled={language==='zh'}>ZH</button>
+            <button onClick={() => setLanguage('en')} disabled={language === 'en'}>EN</button>
+            <button onClick={() => setLanguage('zh')} disabled={language === 'zh'}>ZH</button>
           </div>
         </div>
         <button className="button-block button-outline" style={{ width: 'auto' }} onClick={handleSignOut}>
           {t.signOut}
         </button>
       </div>
-      
-      {/* ... (剩下的所有 JSX 保持不变) ... */}
+
       <p>{t.welcome}, {session.user.email}!</p>
 
       <div style={{ marginTop: '2rem' }}>
@@ -359,7 +377,7 @@ export default function Dashboard({ session, language, setLanguage }) {
             onChange={(e) => setNewPrompt(e.target.value)}
             rows="4"
           />
-          {/* --- 模型设置折叠区 --- */}
+          {/* Model settings collapsible */}
           <div style={{ margin: '12px 0' }}>
             <button
               type="button"
@@ -384,7 +402,6 @@ export default function Dashboard({ session, language, setLanguage }) {
                 borderRadius: '6px',
                 background: '#fafafa',
               }}>
-                {/* Provider 下拉 */}
                 <div style={{ marginBottom: '10px' }}>
                   <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
                     {t.modelProvider}
@@ -405,7 +422,6 @@ export default function Dashboard({ session, language, setLanguage }) {
                   </select>
                 </div>
 
-                {/* Model Version 输入框 */}
                 {modelProvider && (
                   <div style={{ marginBottom: '10px' }}>
                     <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -426,7 +442,6 @@ export default function Dashboard({ session, language, setLanguage }) {
                   </div>
                 )}
 
-                {/* API Key 密码输入（仅 openai / anthropic 显示） */}
                 {(modelProvider === 'openai' || modelProvider === 'anthropic') && (
                   <div style={{ marginBottom: '4px' }}>
                     <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -454,62 +469,66 @@ export default function Dashboard({ session, language, setLanguage }) {
         </form>
       </div>
 
+      {/* History section */}
       <div style={{ marginTop: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3>{t.historyTitle}</h3>
-          {hiddenSimulations.size > 0 && (
-            <button 
-              onClick={toggleView}
-              style={{ 
-                padding: '6px 12px', 
-                border: '1px solid #6200ea', 
-                borderRadius: '4px', 
-                background: showHiddenView ? '#6200ea' : 'white', 
-                color: showHiddenView ? 'white' : '#6200ea',
-                cursor: 'pointer',
-                fontSize: '0.9rem'
-              }}
+        <h3>{t.historyTitle}</h3>
+
+        {/* Filter tabs */}
+        <div className="filter-tabs">
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`filter-tab ${statusFilter === tab.key ? 'filter-tab-active' : ''}`}
+              onClick={() => setStatusFilter(tab.key)}
             >
-              {showHiddenView ? t.showNormalButton : t.showHiddenButton}
+              {tab.label}
+              {counts[tab.key] > 0 && (
+                <span className="filter-count">{counts[tab.key]}</span>
+              )}
             </button>
-          )}
+          ))}
         </div>
+
         {loading && simulations.length === 0 ? (
           <p>{t.loadingHistory}</p>
         ) : simulations.length === 0 ? (
           <p>{t.noHistory}</p>
+        ) : filteredSimulations.length === 0 ? (
+          <p>{t.noMatchingHistory}</p>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {simulations.map((sim) => {
+            {filteredSimulations.map((sim) => {
+              const isExpanded = expandedPrompts.has(sim.id);
+              const promptText = sim.prompt || '';
+              const needsTruncation = promptText.length > PROMPT_TRUNCATE_LENGTH;
+              const displayPrompt = needsTruncation && !isExpanded
+                ? promptText.substring(0, PROMPT_TRUNCATE_LENGTH) + '...'
+                : promptText;
+
               return (
                 <li key={sim.id} className="simulation-card">
                   <div className="card-header">
-                    <h4>{t.case} #{sim.id}</h4>
-                    {showHiddenView ? (
-                      <button 
-                        className="hide-button" 
-                        onClick={() => handleRestoreSimulation(sim.id)}
-                        style={{ background: '#28a745', borderColor: '#28a745', color: 'white' }}
-                      >
-                        {t.restoreButton}
-                      </button>
-                    ) : (
-                      <button className="hide-button" onClick={() => handleHideSimulation(sim.id)}>
-                        {t.hideButton}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h4>{t.case} #{sim.id.substring(0, 8)}</h4>
+                      <span className={`status-badge status-${sim.status}`}>
+                        {sim.status}
+                      </span>
+                    </div>
+                    {sim.status !== 'running' && sim.status !== 'queued' && (
+                      <button className="delete-button" onClick={() => handleDelete(sim)}>
+                        {t.deleteButton}
                       </button>
                     )}
                   </div>
                   <div className="card-body">
-                    <p>
-                      <strong>{t.demand}:</strong> {sim.prompt}
-                    </p>
-                    <p>
-                      <strong>{t.status}:</strong> 
-                      <strong style={{
-                        color: sim.status === 'completed' ? 'green' : (sim.status === 'failed' ? 'red' : '#e67e22')
-                      }}>
-                        {sim.status}
-                      </strong>
+                    <p className="card-prompt">
+                      <strong>{t.demand}:</strong>{' '}
+                      {displayPrompt}
+                      {needsTruncation && (
+                        <button className="expand-button" onClick={() => togglePromptExpand(sim.id)}>
+                          {isExpanded ? t.showLess : t.showMore}
+                        </button>
+                      )}
                     </p>
                     <div className="card-time-row">
                       <small>{t.time}: {new Date(sim.created_at).toLocaleString()}</small>
@@ -543,8 +562,8 @@ export default function Dashboard({ session, language, setLanguage }) {
           </ul>
         )}
       </div>
-      
-      {/* 文件浏览器 Modal */}
+
+      {/* File browser modal */}
       {showFileBrowser && selectedSimulation && selectedSimulation.result_data?.file_tree && (
         <FileBrowser
           jobId={selectedSimulation.id}
