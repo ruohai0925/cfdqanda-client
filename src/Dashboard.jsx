@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import toast from 'react-hot-toast';
 import FileBrowser from './components/FileBrowser';
@@ -27,6 +27,7 @@ const strings = {
     deleteButton: '删除',
     undoButton: '撤销',
     taskDeletedToast: '任务已删除',
+    taskRestoredToast: '任务已恢复',
     taskQueuedToast: '新任务已排队!',
     taskStatusUpdateToast: '状态更新为',
     showMore: '展开',
@@ -69,6 +70,7 @@ const strings = {
     deleteButton: 'Delete',
     undoButton: 'Undo',
     taskDeletedToast: 'Task deleted',
+    taskRestoredToast: 'Task restored',
     taskQueuedToast: 'New task has been queued!',
     taskStatusUpdateToast: 'status updated to',
     showMore: 'more',
@@ -92,7 +94,7 @@ const strings = {
 };
 
 const PROMPT_TRUNCATE_LENGTH = 120;
-const DELETE_UNDO_TIMEOUT = 10000; // 10 seconds
+const UNDO_TOAST_DURATION = 8000; // 8 seconds to click undo
 
 export default function Dashboard({ session, language, setLanguage }) {
   const [loading, setLoading] = useState(true);
@@ -108,9 +110,6 @@ export default function Dashboard({ session, language, setLanguage }) {
   const [modelProvider, setModelProvider] = useState('');
   const [modelVersion, setModelVersion] = useState('');
   const [apiKey, setApiKey] = useState('');
-
-  // Pending deletes: Map of jobId -> { timeoutId, sim }
-  const pendingDeletes = useRef(new Map());
 
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
@@ -141,51 +140,38 @@ export default function Dashboard({ session, language, setLanguage }) {
     }
   };
 
-  // Soft delete with undo
-  const handleDelete = useCallback((sim) => {
+  // Soft delete: call API immediately, show undo toast on success
+  const handleDelete = async (sim) => {
     const jobId = sim.id;
     // Optimistically remove from UI
     setSimulations((prev) => prev.filter((s) => s.id !== jobId));
 
-    // Set a timeout to actually call the DELETE API
-    const timeoutId = setTimeout(async () => {
-      pendingDeletes.current.delete(jobId);
-      try {
-        const resp = await fetch(`${API_URL}/api/v1/simulations/${jobId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${session.access_token}` },
-        });
-        if (!resp.ok) {
-          const errData = await resp.json();
-          throw new Error(errData.detail || 'Delete failed');
-        }
-      } catch (err) {
-        console.error('Delete API call failed:', err);
-        // Restore on failure
-        setSimulations((prev) => [sim, ...prev].sort((a, b) =>
-          new Date(b.created_at) - new Date(a.created_at)
-        ));
-        toast.error(err.message);
+    // Immediately call DELETE API
+    try {
+      const resp = await fetch(`${API_URL}/api/v1/simulations/${jobId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      if (!resp.ok) {
+        const errData = await resp.json();
+        throw new Error(errData.detail || 'Delete failed');
       }
-    }, DELETE_UNDO_TIMEOUT);
+    } catch (err) {
+      // API failed → restore card immediately so user sees it didn't work
+      setSimulations((prev) => [sim, ...prev].sort((a, b) =>
+        new Date(b.created_at) - new Date(a.created_at)
+      ));
+      toast.error(err.message);
+      return;
+    }
 
-    pendingDeletes.current.set(jobId, { timeoutId, sim });
-
-    // Show toast with undo button
+    // API succeeded → show toast with undo button
     toast((toastObj) => (
       <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {t.taskDeletedToast}
         <button
           onClick={() => {
-            // Undo: cancel timeout, restore simulation
-            const pending = pendingDeletes.current.get(jobId);
-            if (pending) {
-              clearTimeout(pending.timeoutId);
-              pendingDeletes.current.delete(jobId);
-            }
-            setSimulations((prev) => [sim, ...prev].sort((a, b) =>
-              new Date(b.created_at) - new Date(a.created_at)
-            ));
+            handleRestore(sim);
             toast.dismiss(toastObj.id);
           }}
           style={{
@@ -202,15 +188,29 @@ export default function Dashboard({ session, language, setLanguage }) {
           {t.undoButton}
         </button>
       </span>
-    ), { duration: DELETE_UNDO_TIMEOUT });
-  }, [API_URL, session.access_token, t]);
+    ), { duration: UNDO_TOAST_DURATION });
+  };
 
-  // Cleanup pending deletes on unmount
-  useEffect(() => {
-    return () => {
-      pendingDeletes.current.forEach(({ timeoutId }) => clearTimeout(timeoutId));
-    };
-  }, []);
+  // Restore a soft-deleted simulation via API
+  const handleRestore = async (sim) => {
+    try {
+      const resp = await fetch(`${API_URL}/api/v1/simulations/${sim.id}/restore`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      if (!resp.ok) {
+        const errData = await resp.json();
+        throw new Error(errData.detail || 'Restore failed');
+      }
+      // Success → add card back to UI
+      setSimulations((prev) => [sim, ...prev].sort((a, b) =>
+        new Date(b.created_at) - new Date(a.created_at)
+      ));
+      toast.success(t.taskRestoredToast);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   // Toggle prompt expansion
   const togglePromptExpand = (simId) => {
