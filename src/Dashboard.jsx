@@ -47,6 +47,8 @@ const strings = {
     apiKeyRequired: '选择了 {provider} 但未填写 API Key，请输入你的 API Key。',
     apiKeyInvalidOpenAI: 'OpenAI API Key 应以 "sk-" 开头，请检查格式。',
     apiKeyInvalidAnthropic: 'Anthropic API Key 应以 "sk-ant-" 开头，请检查格式。',
+    codexFreeLabel: 'ChatGPT Codex（免费）',
+    apiKeyNotRequired: '此提供商使用 ChatGPT 订阅认证，无需 API Key',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -90,6 +92,8 @@ const strings = {
     apiKeyRequired: 'You selected {provider} but did not provide an API Key. Please enter your API Key.',
     apiKeyInvalidOpenAI: 'OpenAI API Key should start with "sk-". Please check the format.',
     apiKeyInvalidAnthropic: 'Anthropic API Key should start with "sk-ant-". Please check the format.',
+    codexFreeLabel: 'ChatGPT Codex (Free)',
+    apiKeyNotRequired: 'Uses ChatGPT subscription auth. No API key needed.',
   }
 };
 
@@ -418,6 +422,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                     style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                   >
                     <option value="">{t.useServerDefault}</option>
+                    <option value="openai-codex">{t.codexFreeLabel}</option>
                     <option value="openai">OpenAI</option>
                     <option value="anthropic">Anthropic</option>
                     <option value="ollama">Ollama (Local)</option>
@@ -435,6 +440,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                       value={modelVersion}
                       onChange={(e) => setModelVersion(e.target.value)}
                       placeholder={
+                        modelProvider === 'openai-codex' ? 'gpt-5.3-codex' :
                         modelProvider === 'openai' ? 'gpt-4o' :
                         modelProvider === 'anthropic' ? 'claude-sonnet-4-5-20250929' :
                         modelProvider === 'ollama' ? 'qwen2.5:32b-instruct' : ''
@@ -460,6 +466,12 @@ export default function Dashboard({ session, language, setLanguage }) {
                     />
                     <small style={{ color: '#888', fontSize: '0.78rem' }}>{t.apiKeyHint}</small>
                   </div>
+                )}
+
+                {modelProvider === 'openai-codex' && (
+                  <small style={{ color: '#4caf50', fontSize: '0.82rem' }}>
+                    {t.apiKeyNotRequired}
+                  </small>
                 )}
               </div>
             )}
