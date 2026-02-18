@@ -140,24 +140,22 @@ export default function Dashboard({ session, language, setLanguage }) {
     }
   };
 
-  // Soft delete: call API immediately, show undo toast on success
+  // Soft delete: update Supabase directly (no API server dependency)
   const handleDelete = async (sim) => {
     const jobId = sim.id;
     // Optimistically remove from UI
     setSimulations((prev) => prev.filter((s) => s.id !== jobId));
 
-    // Immediately call DELETE API
+    // Update deleted_at directly via Supabase client
     try {
-      const resp = await fetch(`${API_URL}/api/v1/simulations/${jobId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-      });
-      if (!resp.ok) {
-        const errData = await resp.json();
-        throw new Error(errData.detail || 'Delete failed');
-      }
+      const { error } = await supabase
+        .from('simulations')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', jobId)
+        .eq('user_id', session.user.id);
+      if (error) throw error;
     } catch (err) {
-      // API failed → restore card immediately so user sees it didn't work
+      // Failed → restore card immediately
       setSimulations((prev) => [sim, ...prev].sort((a, b) =>
         new Date(b.created_at) - new Date(a.created_at)
       ));
@@ -165,7 +163,7 @@ export default function Dashboard({ session, language, setLanguage }) {
       return;
     }
 
-    // API succeeded → show toast with undo button
+    // Success → show toast with undo button
     toast((toastObj) => (
       <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {t.taskDeletedToast}
@@ -191,17 +189,15 @@ export default function Dashboard({ session, language, setLanguage }) {
     ), { duration: UNDO_TOAST_DURATION });
   };
 
-  // Restore a soft-deleted simulation via API
+  // Restore a soft-deleted simulation via Supabase directly
   const handleRestore = async (sim) => {
     try {
-      const resp = await fetch(`${API_URL}/api/v1/simulations/${sim.id}/restore`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-      });
-      if (!resp.ok) {
-        const errData = await resp.json();
-        throw new Error(errData.detail || 'Restore failed');
-      }
+      const { error } = await supabase
+        .from('simulations')
+        .update({ deleted_at: null })
+        .eq('id', sim.id)
+        .eq('user_id', session.user.id);
+      if (error) throw error;
       // Success → add card back to UI
       setSimulations((prev) => [sim, ...prev].sort((a, b) =>
         new Date(b.created_at) - new Date(a.created_at)
