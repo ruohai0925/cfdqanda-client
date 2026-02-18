@@ -115,7 +115,7 @@ export default function Dashboard({ session, language, setLanguage }) {
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   // Download ZIP
