@@ -262,7 +262,7 @@ export default function Dashboard({ session, language, setLanguage }) {
             setSimulations((prev) =>
               prev.map((sim) => sim.id === payload.new.id ? payload.new : sim)
             );
-            toast.success(`${payload.new.id.substring(0,8)}... ${t.taskStatusUpdateToast}: ${payload.new.status}`);
+            toast.success(`${String(payload.new.id).substring(0,8)}... ${t.taskStatusUpdateToast}: ${payload.new.status}`);
           }
         }
       )
@@ -509,7 +509,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                 <li key={sim.id} className="simulation-card">
                   <div className="card-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h4>{t.case} #{sim.id.substring(0, 8)}</h4>
+                      <h4>{t.case} #{String(sim.id).substring(0, 8)}</h4>
                       <span className={`status-badge status-${sim.status}`}>
                         {sim.status}
                       </span>
