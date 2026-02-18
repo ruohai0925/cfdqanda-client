@@ -115,7 +115,13 @@ export default function Dashboard({ session, language, setLanguage }) {
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut({ scope: 'local' });
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) {
+      // Token expired/invalid → force-clear local session
+      const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
+      localStorage.removeItem(storageKey);
+      window.location.reload();
+    }
   };
 
   // Download ZIP
