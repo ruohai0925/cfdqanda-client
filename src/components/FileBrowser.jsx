@@ -28,6 +28,15 @@ const fileBrowserStrings = {
     feedbackRequired: '请输入反馈内容',
     feedbackTitle: '添加反馈',
     feedbackFor: '反馈文件',
+    ratingTitle: '请对此任务的结果进行评价',
+    ratingSuccess: '成功',
+    ratingPartial: '部分成功',
+    ratingFailed: '失败',
+    ratingCommentPlaceholder: '一句话评价（可选，最多500字）',
+    ratingSubmit: '提交评价',
+    ratingSkip: '跳过',
+    ratingSubmitted: '评价已提交',
+    ratingError: '评价提交失败',
   },
   en: {
     title: 'File Browser',
@@ -52,10 +61,19 @@ const fileBrowserStrings = {
     feedbackRequired: 'Please enter feedback content',
     feedbackTitle: 'Add Feedback',
     feedbackFor: 'Feedback for',
+    ratingTitle: 'How would you rate this simulation result?',
+    ratingSuccess: 'Success',
+    ratingPartial: 'Partial',
+    ratingFailed: 'Failed',
+    ratingCommentPlaceholder: 'One-line comment (optional, max 500 chars)',
+    ratingSubmit: 'Submit Rating',
+    ratingSkip: 'Skip',
+    ratingSubmitted: 'Rating submitted',
+    ratingError: 'Failed to submit rating',
   }
 };
 
-export default function FileBrowser({ jobId, userId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl }) {
+export default function FileBrowser({ jobId, userId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl, userRating }) {
   const [expandedDirs, setExpandedDirs] = useState(new Set(['output'])); // 默认展开output目录
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
@@ -64,6 +82,12 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
   const [feedbackFile, setFeedbackFile] = useState(null);
   const [feedbackContent, setFeedbackContent] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+  // Rating panel state
+  const [showRatingPanel, setShowRatingPanel] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(null);
+  const [ratingComment, setRatingComment] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
   
   // 拖拽状态
   const [fileBrowserPosition, setFileBrowserPosition] = useState({ x: 0, y: 0 });
@@ -348,6 +372,50 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
     }
   };
 
+  // Intercept close: show rating panel if user hasn't rated yet
+  const handleRequestClose = () => {
+    if (!userRating && !showRatingPanel) {
+      setShowRatingPanel(true);
+      return;
+    }
+    onClose();
+  };
+
+  // Submit rating to API
+  const submitRating = async () => {
+    if (!selectedRating) return;
+
+    setSubmittingRating(true);
+    try {
+      const body = { rating: selectedRating };
+      if (ratingComment.trim()) {
+        body.comment = ratingComment.trim();
+      }
+
+      const response = await fetch(`${apiUrl}/api/v1/simulations/${jobId}/rating`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || t.ratingError);
+      }
+
+      toast.success(t.ratingSubmitted);
+      onClose();
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      toast.error(error.message || t.ratingError);
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
   // 渲染文件树节点
   const renderTreeNode = (node, path = '', level = 0) => {
     const entries = Object.entries(node).sort(([a], [b]) => {
@@ -427,15 +495,15 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
   };
 
   return (
-    <div 
-      className="file-browser-modal-overlay" 
+    <div
+      className="file-browser-modal-overlay"
       onClick={(e) => {
         // 如果反馈模态框打开，点击overlay时只关闭反馈模态框，不关闭文件浏览器
         if (showFeedbackModal) {
           e.stopPropagation();
           closeFeedbackModal();
         } else {
-          onClose();
+          handleRequestClose();
         }
       }}
     >
@@ -453,7 +521,7 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
           style={{ cursor: 'grab' }}
         >
           <h2>{t.title} - Task #{jobId}</h2>
-          <button className="file-browser-close" onClick={onClose}>
+          <button className="file-browser-close" onClick={handleRequestClose}>
             {t.close}
           </button>
         </div>
@@ -504,6 +572,59 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
             )}
           </div>
         </div>
+
+        {/* Rating panel at the bottom of FileBrowser */}
+        {showRatingPanel && (
+          <div className="rating-panel">
+            <div className="rating-panel-title">{t.ratingTitle}</div>
+            <div className="rating-panel-body">
+              <div className="rating-buttons">
+                <button
+                  className={`rating-btn rating-btn-success ${selectedRating === 1 ? 'rating-btn-selected' : ''}`}
+                  onClick={() => setSelectedRating(1)}
+                >
+                  {t.ratingSuccess}
+                </button>
+                <button
+                  className={`rating-btn rating-btn-partial ${selectedRating === 2 ? 'rating-btn-selected' : ''}`}
+                  onClick={() => setSelectedRating(2)}
+                >
+                  {t.ratingPartial}
+                </button>
+                <button
+                  className={`rating-btn rating-btn-failed ${selectedRating === 3 ? 'rating-btn-selected' : ''}`}
+                  onClick={() => setSelectedRating(3)}
+                >
+                  {t.ratingFailed}
+                </button>
+              </div>
+              <input
+                type="text"
+                className="rating-comment-input"
+                placeholder={t.ratingCommentPlaceholder}
+                value={ratingComment}
+                onChange={(e) => setRatingComment(e.target.value)}
+                maxLength={500}
+              />
+              <div className="rating-actions">
+                <button
+                  className="rating-skip-btn"
+                  onClick={onClose}
+                  disabled={submittingRating}
+                >
+                  {t.ratingSkip}
+                </button>
+                <button
+                  className="rating-submit-btn"
+                  onClick={submitRating}
+                  disabled={submittingRating || !selectedRating}
+                >
+                  {submittingRating ? '...' : t.ratingSubmit}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 反馈模态框 */}

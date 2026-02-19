@@ -728,6 +728,138 @@ body {
   white-space: nowrap;
 }
 
+/* ===== Rating panel (bottom bar inside FileBrowser) ===== */
+.rating-panel {
+  border-top: 2px solid #6200ea;
+  background: #f8f9fa;
+  padding: 12px 1.5rem;
+}
+
+.rating-panel-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.rating-panel-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rating-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.rating-btn {
+  padding: 6px 16px;
+  border: 2px solid #ccc;
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.rating-btn:hover {
+  transform: scale(1.05);
+}
+
+.rating-btn-success {
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+.rating-btn-success:hover,
+.rating-btn-success.rating-btn-selected {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: white;
+}
+
+.rating-btn-partial {
+  color: #e67e22;
+  border-color: #ffcc80;
+}
+.rating-btn-partial:hover,
+.rating-btn-partial.rating-btn-selected {
+  background: #e67e22;
+  border-color: #e67e22;
+  color: white;
+}
+
+.rating-btn-failed {
+  color: #c62828;
+  border-color: #ef9a9a;
+}
+.rating-btn-failed:hover,
+.rating-btn-failed.rating-btn-selected {
+  background: #c62828;
+  border-color: #c62828;
+  color: white;
+}
+
+.rating-comment-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.rating-comment-input:focus {
+  outline: none;
+  border-color: #6200ea;
+  box-shadow: 0 0 0 2px rgba(98, 0, 234, 0.1);
+}
+
+.rating-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rating-skip-btn {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.rating-skip-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.rating-submit-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 4px;
+  background: #6200ea;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.rating-submit-btn:hover:not(:disabled) {
+  background: #5000b9;
+}
+
+.rating-skip-btn:disabled,
+.rating-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .file-browser-modal {

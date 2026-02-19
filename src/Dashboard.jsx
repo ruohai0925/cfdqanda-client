@@ -240,7 +240,7 @@ export default function Dashboard({ session, language, setLanguage }) {
       setLoading(true);
       const { data, error, status } = await supabase
         .from('simulations')
-        .select('id, created_at, prompt, status, result_data, deleted_at')
+        .select('id, created_at, prompt, status, result_data, deleted_at, user_rating')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
@@ -610,6 +610,7 @@ export default function Dashboard({ session, language, setLanguage }) {
           storageBasePath={selectedSimulation.result_data.storage_base_path}
           language={language}
           apiUrl={API_URL}
+          userRating={selectedSimulation.user_rating}
           onClose={() => {
             setShowFileBrowser(false);
             setSelectedSimulation(null);
