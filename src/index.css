@@ -325,6 +325,15 @@ body {
   background-color: #5000b9;
 }
 
+/* OpenFOAM version notice */
+.openfoam-version-notice {
+  padding: 6px 1.5rem;
+  background-color: #fff3e0;
+  border-bottom: 1px solid #ffe0b2;
+  color: #e65100;
+  font-size: 0.8rem;
+}
+
 /* Modal 内容区域 */
 .file-browser-content {
   display: flex;

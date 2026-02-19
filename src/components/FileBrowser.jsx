@@ -37,6 +37,7 @@ const fileBrowserStrings = {
     ratingSkip: '跳过',
     ratingSubmitted: '评价已提交',
     ratingError: '评价提交失败',
+    openfoamVersion: '生成的文件基于 OpenFOAM v10 (Foundation)，与 ESI 版本可能不兼容',
   },
   en: {
     title: 'File Browser',
@@ -70,6 +71,7 @@ const fileBrowserStrings = {
     ratingSkip: 'Skip',
     ratingSubmitted: 'Rating submitted',
     ratingError: 'Failed to submit rating',
+    openfoamVersion: 'Generated files are based on OpenFOAM v10 (Foundation), may not be compatible with ESI version',
   }
 };
 
@@ -526,6 +528,10 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
           </button>
         </div>
         
+        <div className="openfoam-version-notice">
+          ⚠ {t.openfoamVersion}
+        </div>
+
         <div className="file-browser-content">
           <div 
             className="file-browser-sidebar"
