@@ -75,7 +75,7 @@ const fileBrowserStrings = {
   }
 };
 
-export default function FileBrowser({ jobId, userId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl, userRating }) {
+export default function FileBrowser({ jobId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl, userRating }) {
   const [expandedDirs, setExpandedDirs] = useState(new Set(['output'])); // 默认展开output目录
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
@@ -115,7 +115,7 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
       fileTree.directories.forEach(dir => {
         const parts = dir.path.split('/');
         let current = tree;
-        parts.forEach((part, index) => {
+        parts.forEach((part) => {
           if (!current[part]) {
             current[part] = {
               type: 'directory',
@@ -199,6 +199,7 @@ export default function FileBrowser({ jobId, userId, accessToken, fileTree, stor
         
         // 检查是否包含不可打印字符（二进制文件的特征）
         // 排除常见的文本控制字符：\n (0x0A), \r (0x0D), \t (0x09)
+        // eslint-disable-next-line no-control-regex
         const binaryCharPattern = /[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\xFF]/g;
         const binaryMatches = text.match(binaryCharPattern);
         

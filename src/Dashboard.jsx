@@ -50,6 +50,10 @@ const strings = {
     apiKeyInvalidAnthropic: 'Anthropic API Key 应以 "sk-ant-" 开头，请检查格式。',
     codexFreeLabel: 'ChatGPT Codex（免费）',
     apiKeyNotRequired: '此提供商使用 ChatGPT 订阅认证，无需 API Key',
+    cancelButton: '取消',
+    cancellingButton: '取消中...',
+    taskCancelledToast: '任务已取消',
+    cancelFailedToast: '取消失败',
     examplesTitle: '示例 Prompt（点击填入）',
   },
   en: {
@@ -96,6 +100,10 @@ const strings = {
     apiKeyInvalidAnthropic: 'Anthropic API Key should start with "sk-ant-". Please check the format.',
     codexFreeLabel: 'ChatGPT Codex (Free)',
     apiKeyNotRequired: 'Uses ChatGPT subscription auth. No API key needed.',
+    cancelButton: 'Cancel',
+    cancellingButton: 'Cancelling...',
+    taskCancelledToast: 'Task cancelled',
+    cancelFailedToast: 'Cancel failed',
     examplesTitle: 'Example Prompts (click to fill)',
   }
 };
@@ -218,6 +226,35 @@ export default function Dashboard({ session, language, setLanguage }) {
       toast.success(t.taskRestoredToast);
     } catch (err) {
       toast.error(err.message);
+    }
+  };
+
+  // Cancel a queued or running simulation
+  const [cancellingJobs, setCancellingJobs] = useState(new Set());
+
+  const handleCancel = async (sim) => {
+    const jobId = sim.id;
+    setCancellingJobs((prev) => new Set(prev).add(jobId));
+    try {
+      const response = await fetch(`${API_URL}/api/v1/simulations/${jobId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Cancel failed');
+      }
+      toast.success(t.taskCancelledToast);
+    } catch (err) {
+      toast.error(`${t.cancelFailedToast}: ${err.message}`);
+    } finally {
+      setCancellingJobs((prev) => {
+        const next = new Set(prev);
+        next.delete(jobId);
+        return next;
+      });
     }
   };
 
@@ -551,6 +588,15 @@ export default function Dashboard({ session, language, setLanguage }) {
                         {sim.status}
                       </span>
                     </div>
+                    {(sim.status === 'queued' || sim.status === 'running') && (
+                      <button
+                        className="cancel-button"
+                        onClick={() => handleCancel(sim)}
+                        disabled={cancellingJobs.has(sim.id)}
+                      >
+                        {cancellingJobs.has(sim.id) ? t.cancellingButton : t.cancelButton}
+                      </button>
+                    )}
                     {sim.status !== 'running' && sim.status !== 'queued' && (
                       <button className="delete-button" onClick={() => handleDelete(sim)}>
                         {t.deleteButton}
@@ -604,7 +650,6 @@ export default function Dashboard({ session, language, setLanguage }) {
       {showFileBrowser && selectedSimulation && selectedSimulation.result_data?.file_tree && (
         <FileBrowser
           jobId={selectedSimulation.id}
-          userId={session.user.id}
           accessToken={session.access_token}
           fileTree={selectedSimulation.result_data.file_tree}
           storageBasePath={selectedSimulation.result_data.storage_base_path}

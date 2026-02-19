@@ -71,7 +71,7 @@ export default function Auth({ language, setLanguage }) {
     try {
       setLoading(true) // 开始加载状态
       // 调用Supabase的注册方法，创建新用户账户
-      const { data, error } = await supabase.auth.signUp({ email, password })
+      const { error } = await supabase.auth.signUp({ email, password })
       if (error) throw error // 如果有错误，抛出异常
       // 注册成功后提示用户检查邮箱（如果开启了邮箱验证功能）
       toast.success(t.signupSuccess)

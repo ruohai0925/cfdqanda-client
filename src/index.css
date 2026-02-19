@@ -164,6 +164,31 @@ body {
     background: #ffebee;
     color: #c62828;
   }
+  .status-cancelled {
+    background: #f3e5f5;
+    color: #7b1fa2;
+  }
+
+  /* Cancel button */
+  .cancel-button {
+    background: transparent;
+    border: 1px solid #ab47bc;
+    color: #ab47bc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .cancel-button:hover {
+    background: #f3e5f5;
+    border-color: #7b1fa2;
+    color: #7b1fa2;
+  }
+  .cancel-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
   /* Delete button */
   .delete-button {
