@@ -662,6 +662,72 @@ body {
   cursor: not-allowed;
 }
 
+/* ===== Prompt examples ===== */
+.prompt-examples {
+  margin: 8px 0 4px;
+}
+
+.prompt-examples-title {
+  color: #888;
+  font-size: 0.82rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.prompt-examples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.prompt-example-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  background: #fafafa;
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: #555;
+  transition: all 0.2s;
+  line-height: 1.3;
+}
+
+.prompt-example-chip:hover {
+  border-color: #6200ea;
+  background: #f3e8ff;
+  color: #6200ea;
+}
+
+.chip-tag {
+  background: #e8eaf6;
+  color: #3949ab;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.prompt-example-chip:hover .chip-tag {
+  background: #ede7f6;
+  color: #6200ea;
+}
+
+.chip-label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chip-solver {
+  color: #999;
+  font-size: 0.75rem;
+  font-style: italic;
+  white-space: nowrap;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .file-browser-modal {

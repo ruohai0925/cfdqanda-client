@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import toast from 'react-hot-toast';
 import FileBrowser from './components/FileBrowser';
+import promptExamples from './data/promptExamples';
 
 // --- Language dictionary ---
 const strings = {
@@ -49,6 +50,7 @@ const strings = {
     apiKeyInvalidAnthropic: 'Anthropic API Key 应以 "sk-ant-" 开头，请检查格式。',
     codexFreeLabel: 'ChatGPT Codex（免费）',
     apiKeyNotRequired: '此提供商使用 ChatGPT 订阅认证，无需 API Key',
+    examplesTitle: '示例 Prompt（点击填入）',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -94,6 +96,7 @@ const strings = {
     apiKeyInvalidAnthropic: 'Anthropic API Key should start with "sk-ant-". Please check the format.',
     codexFreeLabel: 'ChatGPT Codex (Free)',
     apiKeyNotRequired: 'Uses ChatGPT subscription auth. No API key needed.',
+    examplesTitle: 'Example Prompts (click to fill)',
   }
 };
 
@@ -383,6 +386,26 @@ export default function Dashboard({ session, language, setLanguage }) {
             onChange={(e) => setNewPrompt(e.target.value)}
             rows="4"
           />
+          {/* Prompt examples */}
+          <div className="prompt-examples">
+            <small className="prompt-examples-title">{t.examplesTitle}</small>
+            <div className="prompt-examples-list">
+              {promptExamples.map((ex) => (
+                <button
+                  key={ex.id}
+                  type="button"
+                  className="prompt-example-chip"
+                  title={ex.description[language]}
+                  onClick={() => setNewPrompt(ex.prompt)}
+                >
+                  <span className="chip-tag">{ex.tag[language]}</span>
+                  <span className="chip-label">{ex.label[language]}</span>
+                  <span className="chip-solver">{ex.solver}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Model settings collapsible */}
           <div style={{ margin: '12px 0' }}>
             <button
