@@ -923,6 +923,69 @@ body {
   cursor: not-allowed;
 }
 
+/* ===== App footer ===== */
+.app-footer {
+  margin-top: 3rem;
+  padding: 1rem 0;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.app-footer a {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.app-footer a:hover {
+  color: #6200ea;
+  text-decoration: underline;
+}
+
+/* ===== Privacy policy page ===== */
+.privacy-policy {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.privacy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.privacy-updated {
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+.privacy-section {
+  margin-bottom: 1.5rem;
+}
+
+.privacy-section h2 {
+  font-size: 1.15rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-section p {
+  color: #555;
+  line-height: 1.7;
+  white-space: pre-line;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .file-browser-modal {
