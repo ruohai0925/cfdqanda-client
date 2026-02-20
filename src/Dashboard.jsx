@@ -397,7 +397,7 @@ export default function Dashboard({ session, language, setLanguage }) {
   ];
 
   return (
-    <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+    <div className="dashboard-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <h2>{t.dashboardTitle}</h2>
@@ -417,11 +417,11 @@ export default function Dashboard({ session, language, setLanguage }) {
         <h3>{t.newSimulationTitle}</h3>
         <form onSubmit={handleSubmit}>
           <textarea
-            className="inputField"
+            className="inputField prompt-textarea"
             placeholder={t.promptPlaceholder}
             value={newPrompt}
             onChange={(e) => setNewPrompt(e.target.value)}
-            rows="4"
+            rows="8"
           />
           {/* Prompt examples */}
           <div className="prompt-examples">

@@ -696,6 +696,35 @@ body {
   cursor: not-allowed;
 }
 
+/* ===== Dashboard layout ===== */
+.dashboard-container {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Prompt textarea */
+.prompt-textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+@media (min-width: 1200px) {
+  .dashboard-container {
+    max-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    max-width: 100%;
+    padding: 0 8px;
+  }
+  .prompt-textarea {
+    min-height: 120px;
+  }
+}
+
 /* ===== Prompt examples ===== */
 .prompt-examples {
   margin: 8px 0 4px;
