@@ -55,6 +55,42 @@ const strings = {
     taskCancelledToast: '任务已取消',
     cancelFailedToast: '取消失败',
     examplesTitle: '示例 Prompt（点击填入）',
+    preRunSettings: 'Pre-Run 设置',
+    preRunHint: '（可选）快速验证仿真配置',
+    preRunSteps: 'Pre-Run 步数',
+    preRunDefault: '默认（10步）',
+    preRunDisabled: '关闭（直接完整运行）',
+    preRunSingleStep: '单步验证',
+    pipelineMode: '执行模式',
+    pipelineModeAuto: '自动模式（一步到位）',
+    pipelineModeControlled: '分步模式（可暂停检查）',
+    pipelineCheckpoints: '暂停检查点',
+    pipelineCheckpointPlan: '审阅方案',
+    pipelineCheckpointFiles: '检查生成文件',
+    pipelineCheckpointPreRun: '检查 Pre-Run 结果',
+    pipelineStageLabel: '当前阶段',
+    pipelineStages: {
+      planning: '分析需求中',
+      plan_review: '方案待审阅',
+      generating: '生成文件中',
+      files_review: '文件待检查',
+      pre_running: '预运行中',
+      pre_run_review: 'Pre-Run 待检查',
+      running: '仿真运行中',
+      reviewing: '错误修复中',
+      visualizing: '可视化生成中',
+    },
+    checkpointStatus: '待确认',
+    checkpointInfo: 'Pre-Run 已完成',
+    checkpointOriginalEndTime: '完整 endTime',
+    checkpointPreRunEndTime: 'Pre-Run 步数',
+    checkpointConfirmButton: '继续运行',
+    checkpointRejectButton: '放弃',
+    checkpointConfirmingButton: '确认中...',
+    checkpointConfirmedToast: '已确认，完整仿真即将开始',
+    checkpointRejectedToast: '已放弃，任务标记为失败',
+    checkpointActionFailedToast: '操作失败',
+    browsePreRunButton: '查看 Pre-Run 结果',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -105,6 +141,42 @@ const strings = {
     taskCancelledToast: 'Task cancelled',
     cancelFailedToast: 'Cancel failed',
     examplesTitle: 'Example Prompts (click to fill)',
+    preRunSettings: 'Pre-Run Settings',
+    preRunHint: '(Optional) Quick validation before full simulation',
+    preRunSteps: 'Pre-Run Steps',
+    preRunDefault: 'Default (10 steps)',
+    preRunDisabled: 'Disabled (run full simulation directly)',
+    preRunSingleStep: 'Single step',
+    pipelineMode: 'Execution Mode',
+    pipelineModeAuto: 'Auto (one-shot)',
+    pipelineModeControlled: 'Step-by-step (pause to review)',
+    pipelineCheckpoints: 'Review Checkpoints',
+    pipelineCheckpointPlan: 'Review plan',
+    pipelineCheckpointFiles: 'Review generated files',
+    pipelineCheckpointPreRun: 'Review Pre-Run results',
+    pipelineStageLabel: 'Current Stage',
+    pipelineStages: {
+      planning: 'Analyzing requirements',
+      plan_review: 'Plan awaiting review',
+      generating: 'Generating files',
+      files_review: 'Files awaiting review',
+      pre_running: 'Pre-running',
+      pre_run_review: 'Pre-Run awaiting review',
+      running: 'Running simulation',
+      reviewing: 'Fixing errors',
+      visualizing: 'Generating visualization',
+    },
+    checkpointStatus: 'Awaiting Review',
+    checkpointInfo: 'Pre-Run Completed',
+    checkpointOriginalEndTime: 'Full endTime',
+    checkpointPreRunEndTime: 'Pre-Run Steps',
+    checkpointConfirmButton: 'Continue Run',
+    checkpointRejectButton: 'Reject',
+    checkpointConfirmingButton: 'Confirming...',
+    checkpointConfirmedToast: 'Confirmed. Full simulation will start shortly.',
+    checkpointRejectedToast: 'Rejected. Task marked as failed.',
+    checkpointActionFailedToast: 'Action failed',
+    browsePreRunButton: 'View Pre-Run Results',
   }
 };
 
@@ -125,6 +197,15 @@ export default function Dashboard({ session, language, setLanguage }) {
   const [modelProvider, setModelProvider] = useState('');
   const [modelVersion, setModelVersion] = useState('');
   const [apiKey, setApiKey] = useState('');
+
+  // Pre-run settings state
+  const [showPreRunSettings, setShowPreRunSettings] = useState(false);
+  const [preRunEndTime, setPreRunEndTime] = useState('');  // '' = default (10), '-1' = disabled
+  const [pipelineMode, setPipelineMode] = useState('auto');  // 'auto' or 'controlled'
+  const [selectedCheckpoints, setSelectedCheckpoints] = useState(['files_review', 'pre_run_review']);
+
+  // Checkpoint action state (track which jobs are being confirmed/rejected)
+  const [checkpointActionJobs, setCheckpointActionJobs] = useState(new Set());
 
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
@@ -258,6 +339,56 @@ export default function Dashboard({ session, language, setLanguage }) {
     }
   };
 
+  // Checkpoint confirm
+  const handleCheckpointConfirm = async (sim) => {
+    const jobId = sim.id;
+    setCheckpointActionJobs((prev) => new Set(prev).add(jobId));
+    try {
+      const response = await fetch(`${API_URL}/api/v1/simulations/${jobId}/stage/confirm`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Confirm failed');
+      }
+      toast.success(t.checkpointConfirmedToast);
+    } catch (err) {
+      toast.error(`${t.checkpointActionFailedToast}: ${err.message}`);
+    } finally {
+      setCheckpointActionJobs((prev) => {
+        const next = new Set(prev);
+        next.delete(jobId);
+        return next;
+      });
+    }
+  };
+
+  // Checkpoint reject
+  const handleCheckpointReject = async (sim) => {
+    const jobId = sim.id;
+    setCheckpointActionJobs((prev) => new Set(prev).add(jobId));
+    try {
+      const response = await fetch(`${API_URL}/api/v1/simulations/${jobId}/stage/reject`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Reject failed');
+      }
+      toast.success(t.checkpointRejectedToast);
+    } catch (err) {
+      toast.error(`${t.checkpointActionFailedToast}: ${err.message}`);
+    } finally {
+      setCheckpointActionJobs((prev) => {
+        const next = new Set(prev);
+        next.delete(jobId);
+        return next;
+      });
+    }
+  };
+
   // Toggle prompt expansion
   const togglePromptExpand = (simId) => {
     setExpandedPrompts((prev) => {
@@ -277,7 +408,7 @@ export default function Dashboard({ session, language, setLanguage }) {
       setLoading(true);
       const { data, error, status } = await supabase
         .from('simulations')
-        .select('id, created_at, prompt, status, result_data, deleted_at, user_rating')
+        .select('id, created_at, prompt, status, result_data, deleted_at, user_rating, pipeline_mode, pipeline_stage, pipeline_state')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
@@ -352,6 +483,17 @@ export default function Dashboard({ session, language, setLanguage }) {
         if (apiKey) llmConfig.api_key = apiKey;
         requestBody.llm_config = llmConfig;
       }
+      // Pre-run end time
+      if (showPreRunSettings && preRunEndTime !== '') {
+        requestBody.pre_run_end_time = parseInt(preRunEndTime, 10);
+      }
+      // Pipeline mode
+      if (showPreRunSettings && pipelineMode === 'controlled') {
+        requestBody.pipeline_mode = 'controlled';
+        if (selectedCheckpoints.length > 0) {
+          requestBody.checkpoints = selectedCheckpoints;
+        }
+      }
 
       const response = await fetch(`${API_URL}/api/v1/simulations`, {
         method: 'POST',
@@ -377,16 +519,18 @@ export default function Dashboard({ session, language, setLanguage }) {
   // Filter simulations by status
   const filteredSimulations = simulations.filter((sim) => {
     if (statusFilter === 'all') return true;
-    if (statusFilter === 'active') return sim.status === 'queued' || sim.status === 'running';
+    if (statusFilter === 'active') return sim.status === 'queued' || sim.status === 'running' || sim.status === 'checkpoint';
+    if (statusFilter === 'checkpoint') return sim.status === 'checkpoint';
     return sim.status === statusFilter;
   });
 
   // Count by status for filter tab badges
   const counts = {
     all: simulations.length,
-    active: simulations.filter((s) => s.status === 'queued' || s.status === 'running').length,
+    active: simulations.filter((s) => s.status === 'queued' || s.status === 'running' || s.status === 'checkpoint').length,
     completed: simulations.filter((s) => s.status === 'completed').length,
     failed: simulations.filter((s) => s.status === 'failed').length,
+    checkpoint: simulations.filter((s) => s.status === 'checkpoint').length,
   };
 
   const filterTabs = [
@@ -537,6 +681,90 @@ export default function Dashboard({ session, language, setLanguage }) {
             )}
           </div>
 
+          {/* Pre-run settings collapsible */}
+          <div style={{ margin: '12px 0' }}>
+            <button
+              type="button"
+              onClick={() => setShowPreRunSettings(!showPreRunSettings)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#6200ea',
+                cursor: 'pointer',
+                padding: 0,
+                fontSize: '0.9rem',
+              }}
+            >
+              {showPreRunSettings ? '▼' : '▶'} {t.preRunSettings} {t.preRunHint}
+            </button>
+
+            {showPreRunSettings && (
+              <div style={{
+                marginTop: '10px',
+                padding: '14px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '6px',
+                background: '#fafafa',
+              }}>
+                {/* Pipeline mode selector */}
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                  {t.pipelineMode}
+                </label>
+                <select
+                  value={pipelineMode}
+                  onChange={(e) => setPipelineMode(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', marginBottom: '12px' }}
+                >
+                  <option value="auto">{t.pipelineModeAuto}</option>
+                  <option value="controlled">{t.pipelineModeControlled}</option>
+                </select>
+
+                {/* Checkpoint selectors (only for controlled mode) */}
+                {pipelineMode === 'controlled' && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {t.pipelineCheckpoints}
+                    </label>
+                    {[
+                      { value: 'plan_review', label: t.pipelineCheckpointPlan },
+                      { value: 'files_review', label: t.pipelineCheckpointFiles },
+                      { value: 'pre_run_review', label: t.pipelineCheckpointPreRun },
+                    ].map(({ value, label }) => (
+                      <label key={value} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '0.85rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedCheckpoints.includes(value)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCheckpoints((prev) => [...prev, value]);
+                            } else {
+                              setSelectedCheckpoints((prev) => prev.filter((c) => c !== value));
+                            }
+                          }}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pre-run steps (shown for both modes) */}
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                  {t.preRunSteps}
+                </label>
+                <select
+                  value={preRunEndTime}
+                  onChange={(e) => setPreRunEndTime(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                >
+                  <option value="">{t.preRunDefault}</option>
+                  <option value="1">{t.preRunSingleStep}</option>
+                  <option value="-1">{t.preRunDisabled}</option>
+                </select>
+              </div>
+            )}
+          </div>
+
           <button className="button-block" type="submit" disabled={loading || !newPrompt.trim()}>
             {loading ? t.submittingButton : t.submitButton}
           </button>
@@ -587,6 +815,17 @@ export default function Dashboard({ session, language, setLanguage }) {
                       <span className={`status-badge status-${sim.status}`}>
                         {sim.status}
                       </span>
+                      {sim.pipeline_mode === 'controlled' && sim.pipeline_stage && (
+                        <span style={{
+                          fontSize: '0.75rem',
+                          color: '#666',
+                          background: '#f0f0f0',
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                        }}>
+                          {t.pipelineStages[sim.pipeline_stage] || sim.pipeline_stage}
+                        </span>
+                      )}
                     </div>
                     {(sim.status === 'queued' || sim.status === 'running') && (
                       <button
@@ -597,7 +836,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                         {cancellingJobs.has(sim.id) ? t.cancellingButton : t.cancelButton}
                       </button>
                     )}
-                    {sim.status !== 'running' && sim.status !== 'queued' && (
+                    {sim.status !== 'running' && sim.status !== 'queued' && sim.status !== 'checkpoint' && (
                       <button className="delete-button" onClick={() => handleDelete(sim)}>
                         {t.deleteButton}
                       </button>
@@ -638,6 +877,69 @@ export default function Dashboard({ session, language, setLanguage }) {
                         )}
                       </div>
                     </div>
+
+                    {/* Checkpoint panel — works for both auto and controlled pipeline modes */}
+                    {sim.status === 'checkpoint' && (
+                      <div style={{
+                        marginTop: '12px',
+                        padding: '12px',
+                        border: '1px solid #ff9800',
+                        borderRadius: '6px',
+                        background: '#fff8e1',
+                      }}>
+                        <div style={{ fontWeight: 600, marginBottom: '8px', color: '#e65100' }}>
+                          {sim.pipeline_stage
+                            ? (t.pipelineStages[sim.pipeline_stage] || sim.pipeline_stage)
+                            : t.checkpointInfo}
+                        </div>
+                        {/* Auto mode: show pre-run details */}
+                        {sim.result_data?.checkpoint_data && (
+                          <div style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
+                            <div>
+                              <strong>{t.checkpointOriginalEndTime}:</strong>{' '}
+                              {sim.result_data.checkpoint_data.original_end_time}
+                            </div>
+                            <div>
+                              <strong>{t.checkpointPreRunEndTime}:</strong>{' '}
+                              {sim.result_data.checkpoint_data.pre_run_end_time}
+                            </div>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                          {sim.result_data?.file_tree && (
+                            <button
+                              className="browse-files-button"
+                              onClick={() => {
+                                setSelectedSimulation(sim);
+                                setShowFileBrowser(true);
+                              }}
+                            >
+                              {t.browsePreRunButton}
+                            </button>
+                          )}
+                          <button
+                            className="button-block"
+                            style={{
+                              width: 'auto',
+                              padding: '6px 16px',
+                              fontSize: '0.85rem',
+                              background: '#4caf50',
+                            }}
+                            onClick={() => handleCheckpointConfirm(sim)}
+                            disabled={checkpointActionJobs.has(sim.id)}
+                          >
+                            {checkpointActionJobs.has(sim.id) ? t.checkpointConfirmingButton : t.checkpointConfirmButton}
+                          </button>
+                          <button
+                            className="delete-button"
+                            onClick={() => handleCheckpointReject(sim)}
+                            disabled={checkpointActionJobs.has(sim.id)}
+                          >
+                            {t.checkpointRejectButton}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </li>
               );
@@ -646,7 +948,7 @@ export default function Dashboard({ session, language, setLanguage }) {
         )}
       </div>
 
-      {/* File browser modal */}
+      {/* File browser modal (works for completed and checkpoint status) */}
       {showFileBrowser && selectedSimulation && selectedSimulation.result_data?.file_tree && (
         <FileBrowser
           jobId={selectedSimulation.id}
