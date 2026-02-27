@@ -55,17 +55,15 @@ const strings = {
     taskCancelledToast: '任务已取消',
     cancelFailedToast: '取消失败',
     examplesTitle: '示例 Prompt（点击填入）',
-    preRunSettings: 'Pre-Run 设置',
-    preRunHint: '（可选）快速验证仿真配置',
+    preRunSettings: '执行设置',
+    preRunHint: '（可选）选择执行模式和 Pre-Run 验证',
     preRunSteps: 'Pre-Run 步数',
     preRunDefault: '默认（10步）',
-    preRunDisabled: '关闭（直接完整运行）',
     preRunSingleStep: '单步验证',
     pipelineMode: '执行模式',
     pipelineModeAuto: '自动模式（一步到位）',
     pipelineModeControlled: '分步模式（可暂停检查）',
     pipelineCheckpoints: '暂停检查点',
-    pipelineCheckpointPlan: '审阅方案',
     pipelineCheckpointFiles: '检查生成文件',
     pipelineCheckpointPreRun: '检查 Pre-Run 结果',
     pipelineStageLabel: '当前阶段',
@@ -141,17 +139,15 @@ const strings = {
     taskCancelledToast: 'Task cancelled',
     cancelFailedToast: 'Cancel failed',
     examplesTitle: 'Example Prompts (click to fill)',
-    preRunSettings: 'Pre-Run Settings',
-    preRunHint: '(Optional) Quick validation before full simulation',
+    preRunSettings: 'Execution Settings',
+    preRunHint: '(Optional) Choose execution mode and Pre-Run validation',
     preRunSteps: 'Pre-Run Steps',
     preRunDefault: 'Default (10 steps)',
-    preRunDisabled: 'Disabled (run full simulation directly)',
     preRunSingleStep: 'Single step',
     pipelineMode: 'Execution Mode',
     pipelineModeAuto: 'Auto (one-shot)',
     pipelineModeControlled: 'Step-by-step (pause to review)',
     pipelineCheckpoints: 'Review Checkpoints',
-    pipelineCheckpointPlan: 'Review plan',
     pipelineCheckpointFiles: 'Review generated files',
     pipelineCheckpointPreRun: 'Review Pre-Run results',
     pipelineStageLabel: 'Current Stage',
@@ -726,7 +722,6 @@ export default function Dashboard({ session, language, setLanguage }) {
                       {t.pipelineCheckpoints}
                     </label>
                     {[
-                      { value: 'plan_review', label: t.pipelineCheckpointPlan },
                       { value: 'files_review', label: t.pipelineCheckpointFiles },
                       { value: 'pre_run_review', label: t.pipelineCheckpointPreRun },
                     ].map(({ value, label }) => (
@@ -748,19 +743,22 @@ export default function Dashboard({ session, language, setLanguage }) {
                   </div>
                 )}
 
-                {/* Pre-run steps (shown for both modes) */}
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  {t.preRunSteps}
-                </label>
-                <select
-                  value={preRunEndTime}
-                  onChange={(e) => setPreRunEndTime(e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                >
-                  <option value="">{t.preRunDefault}</option>
-                  <option value="1">{t.preRunSingleStep}</option>
-                  <option value="-1">{t.preRunDisabled}</option>
-                </select>
+                {/* Pre-run steps (only for controlled mode — auto mode doesn't use pre-run) */}
+                {pipelineMode === 'controlled' && (
+                  <>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {t.preRunSteps}
+                    </label>
+                    <select
+                      value={preRunEndTime}
+                      onChange={(e) => setPreRunEndTime(e.target.value)}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    >
+                      <option value="">{t.preRunDefault}</option>
+                      <option value="1">{t.preRunSingleStep}</option>
+                    </select>
+                  </>
+                )}
               </div>
             )}
           </div>
