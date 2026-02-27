@@ -556,32 +556,6 @@ export default function Dashboard({ session, language, setLanguage }) {
       <div style={{ marginTop: '2rem' }}>
         <h3>{t.newSimulationTitle}</h3>
         <form onSubmit={handleSubmit}>
-          <textarea
-            className="inputField prompt-textarea"
-            placeholder={t.promptPlaceholder}
-            value={newPrompt}
-            onChange={(e) => setNewPrompt(e.target.value)}
-            rows="8"
-          />
-          {/* Prompt examples */}
-          <div className="prompt-examples">
-            <small className="prompt-examples-title">{t.examplesTitle}</small>
-            <div className="prompt-examples-list">
-              {promptExamples.map((ex) => (
-                <button
-                  key={ex.id}
-                  type="button"
-                  className="prompt-example-chip"
-                  title={ex.description[language]}
-                  onClick={() => setNewPrompt(ex.prompt)}
-                >
-                  <span className="chip-tag">{ex.tag[language]}</span>
-                  <span className="chip-label">{ex.label[language]}</span>
-                  <span className="chip-solver">{ex.solver}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Model settings collapsible */}
           <div style={{ margin: '12px 0' }}>
@@ -761,6 +735,33 @@ export default function Dashboard({ session, language, setLanguage }) {
                 )}
               </div>
             )}
+          </div>
+
+          <textarea
+            className="inputField prompt-textarea"
+            placeholder={t.promptPlaceholder}
+            value={newPrompt}
+            onChange={(e) => setNewPrompt(e.target.value)}
+            rows="8"
+          />
+          {/* Prompt examples */}
+          <div className="prompt-examples">
+            <small className="prompt-examples-title">{t.examplesTitle}</small>
+            <div className="prompt-examples-list">
+              {promptExamples.map((ex) => (
+                <button
+                  key={ex.id}
+                  type="button"
+                  className="prompt-example-chip"
+                  title={ex.description[language]}
+                  onClick={() => setNewPrompt(ex.prompt)}
+                >
+                  <span className="chip-tag">{ex.tag[language]}</span>
+                  <span className="chip-label">{ex.label[language]}</span>
+                  <span className="chip-solver">{ex.solver}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <button className="button-block" type="submit" disabled={loading || !newPrompt.trim()}>
