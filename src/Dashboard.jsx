@@ -24,7 +24,6 @@ const strings = {
     time: '时间',
     downloadButton: '下载结果 (.zip)',
     downloadError: '下载失败',
-    browseFilesButton: '浏览文件',
     deleteButton: '删除',
     undoButton: '撤销',
     taskDeletedToast: '任务已删除',
@@ -76,10 +75,8 @@ const strings = {
       pre_run_review: 'Pre-Run 待检查',
       running: '仿真运行中',
       reviewing: '错误修复中',
-      visualizing: '可视化生成中',
     },
     checkpointStatus: '待确认',
-    checkpointInfo: 'Pre-Run 已完成',
     checkpointOriginalEndTime: '完整 endTime',
     checkpointPreRunEndTime: 'Pre-Run 步数',
     checkpointConfirmButton: '继续运行',
@@ -89,6 +86,8 @@ const strings = {
     checkpointRejectedToast: '已放弃，任务标记为失败',
     checkpointActionFailedToast: '操作失败',
     browsePreRunButton: '查看 Pre-Run 结果',
+    browseFilesReviewButton: '查看生成文件',
+    browseFilesButton: '浏览文件',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -108,7 +107,6 @@ const strings = {
     time: 'Time',
     downloadButton: 'Download Results (.zip)',
     downloadError: 'Download failed',
-    browseFilesButton: 'Browse Files',
     deleteButton: 'Delete',
     undoButton: 'Undo',
     taskDeletedToast: 'Task deleted',
@@ -160,10 +158,8 @@ const strings = {
       pre_run_review: 'Pre-Run awaiting review',
       running: 'Running simulation',
       reviewing: 'Fixing errors',
-      visualizing: 'Generating visualization',
     },
     checkpointStatus: 'Awaiting Review',
-    checkpointInfo: 'Pre-Run Completed',
     checkpointOriginalEndTime: 'Full endTime',
     checkpointPreRunEndTime: 'Pre-Run Steps',
     checkpointConfirmButton: 'Continue Run',
@@ -173,6 +169,8 @@ const strings = {
     checkpointRejectedToast: 'Rejected. Task marked as failed.',
     checkpointActionFailedToast: 'Action failed',
     browsePreRunButton: 'View Pre-Run Results',
+    browseFilesReviewButton: 'View Generated Files',
+    browseFilesButton: 'Browse Files',
   }
 };
 
@@ -433,7 +431,7 @@ export default function Dashboard({ session, language, setLanguage }) {
             toast.success(t.taskQueuedToast);
           } else if (payload.eventType === 'UPDATE') {
             setSimulations((prev) =>
-              prev.map((sim) => sim.id === payload.new.id ? payload.new : sim)
+              prev.map((sim) => sim.id === payload.new.id ? { ...sim, ...payload.new } : sim)
             );
             toast.success(`${String(payload.new.id).substring(0,8)}... ${t.taskStatusUpdateToast}: ${payload.new.status}`);
           }
@@ -877,7 +875,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                       </div>
                     </div>
 
-                    {/* Checkpoint panel — works for both auto and controlled pipeline modes */}
+                    {/* Checkpoint panel — controlled pipeline mode */}
                     {sim.status === 'checkpoint' && (
                       <div style={{
                         marginTop: '12px',
@@ -887,11 +885,8 @@ export default function Dashboard({ session, language, setLanguage }) {
                         background: '#fff8e1',
                       }}>
                         <div style={{ fontWeight: 600, marginBottom: '8px', color: '#e65100' }}>
-                          {sim.pipeline_stage
-                            ? (t.pipelineStages[sim.pipeline_stage] || sim.pipeline_stage)
-                            : t.checkpointInfo}
+                          {t.pipelineStages[sim.pipeline_stage] || sim.pipeline_stage}
                         </div>
-                        {/* Auto mode: show pre-run details */}
                         {sim.result_data?.checkpoint_data && (
                           <div style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
                             <div>
@@ -913,7 +908,9 @@ export default function Dashboard({ session, language, setLanguage }) {
                                 setShowFileBrowser(true);
                               }}
                             >
-                              {t.browsePreRunButton}
+                              {sim.pipeline_stage === 'files_review' ? t.browseFilesReviewButton
+                                : sim.pipeline_stage === 'pre_run_review' ? t.browsePreRunButton
+                                : t.browseFilesButton}
                             </button>
                           )}
                           <button
