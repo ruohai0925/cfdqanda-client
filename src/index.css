@@ -283,6 +283,44 @@ body {
   background-color: #218838;
 }
 
+/* Checkpoint panel action buttons — uniform sizing */
+.checkpoint-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+.checkpoint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.checkpoint-btn--browse {
+  background-color: #1976d2;
+}
+.checkpoint-btn--browse:hover:not(:disabled) {
+  background-color: #1565c0;
+}
+.checkpoint-btn--confirm {
+  background-color: #4caf50;
+}
+.checkpoint-btn--confirm:hover:not(:disabled) {
+  background-color: #388e3c;
+}
+.checkpoint-btn--reject {
+  background-color: transparent;
+  color: #e57373;
+  border: 1px solid #e57373;
+}
+.checkpoint-btn--reject:hover:not(:disabled) {
+  background: #ffebee;
+  border-color: #c62828;
+  color: #c62828;
+}
+
 /* ===== 文件浏览器样式 ===== */
 
 /* Modal 遮罩层 */

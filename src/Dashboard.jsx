@@ -907,7 +907,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                           {sim.result_data?.file_tree && (
                             <button
-                              className="browse-files-button"
+                              className="checkpoint-btn checkpoint-btn--browse"
                               onClick={() => {
                                 setSelectedSimulation(sim);
                                 setShowFileBrowser(true);
@@ -917,20 +917,14 @@ export default function Dashboard({ session, language, setLanguage }) {
                             </button>
                           )}
                           <button
-                            className="button-block"
-                            style={{
-                              width: 'auto',
-                              padding: '6px 16px',
-                              fontSize: '0.85rem',
-                              background: '#4caf50',
-                            }}
+                            className="checkpoint-btn checkpoint-btn--confirm"
                             onClick={() => handleCheckpointConfirm(sim)}
                             disabled={checkpointActionJobs.has(sim.id)}
                           >
                             {checkpointActionJobs.has(sim.id) ? t.checkpointConfirmingButton : t.checkpointConfirmButton}
                           </button>
                           <button
-                            className="delete-button"
+                            className="checkpoint-btn checkpoint-btn--reject"
                             onClick={() => handleCheckpointReject(sim)}
                             disabled={checkpointActionJobs.has(sim.id)}
                           >
