@@ -40,9 +40,7 @@ const strings = {
     modelSettingsHint: '（可选）使用自己的 LLM 配置',
     modelProvider: 'LLM 提供商',
     modelVersion: '模型版本',
-    modelVersionHint: '从推荐列表选择或手动输入。留空使用默认模型。',
-    modelVersionCustom: '自定义...',
-    modelVersionWarning: '"{version}" 不在已知模型列表中，请确认模型名称正确。仍然提交？',
+    modelVersionHint: '从推荐列表选择',
     apiKey: 'API Key',
     apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
     useServerDefault: '使用服务器默认配置',
@@ -133,9 +131,7 @@ const strings = {
     modelSettingsHint: '(Optional) Use your own LLM configuration',
     modelProvider: 'LLM Provider',
     modelVersion: 'Model Version',
-    modelVersionHint: 'Select from the list or type a custom model name. Leave empty for default.',
-    modelVersionCustom: 'Custom...',
-    modelVersionWarning: '"{version}" is not a known model. Are you sure the model name is correct? Submit anyway?',
+    modelVersionHint: 'Select from the list',
     apiKey: 'API Key',
     apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
     useServerDefault: 'Use server default',
@@ -542,16 +538,7 @@ export default function Dashboard({ session, language, setLanguage }) {
       }
     }
 
-    // Soft validation: warn if model version is not in known list
-    const effectiveVersion = modelVersion && modelVersion !== '__custom__' ? modelVersion : '';
-    if (showModelSettings && effectiveVersion) {
-      const knownModels = MODEL_VERSIONS[modelProvider] || [];
-      const isKnown = knownModels.some(m => m.value === effectiveVersion);
-      if (!isKnown) {
-        const confirmed = window.confirm(t.modelVersionWarning.replace('{version}', effectiveVersion));
-        if (!confirmed) return;
-      }
-    }
+    const effectiveVersion = modelVersion || '';
 
     setLoading(true);
     try {
@@ -715,42 +702,17 @@ export default function Dashboard({ session, language, setLanguage }) {
                     {(() => {
                       const knownModels = MODEL_VERSIONS[modelProvider] || [];
                       const defaultModel = knownModels.find(m => m.isDefault);
-                      const isCustomValue = modelVersion && !knownModels.some(m => m.value === modelVersion);
                       return (
-                        <>
-                          <select
-                            className="inputField"
-                            value={isCustomValue ? '__custom__' : modelVersion}
-                            onChange={(e) => {
-                              if (e.target.value === '__custom__') {
-                                setModelVersion('');
-                              } else {
-                                setModelVersion(e.target.value);
-                              }
-                            }}
-                            style={{ marginBottom: isCustomValue || modelVersion === '' && false ? '6px' : 0 }}
-                          >
-                            <option value="">{defaultModel ? `${defaultModel.value} (default)` : ''}</option>
-                            {knownModels.filter(m => !m.isDefault).map(m => (
-                              <option key={m.value} value={m.value}>{m.label}</option>
-                            ))}
-                            <option value="__custom__">{t.modelVersionCustom}</option>
-                          </select>
-                          {(isCustomValue || modelVersion === '__custom__') && (
-                            <input
-                              type="text"
-                              className="inputField"
-                              value={modelVersion === '__custom__' ? '' : modelVersion}
-                              onChange={(e) => setModelVersion(e.target.value)}
-                              placeholder="e.g. gpt-4o, claude-sonnet-4-5-20250929"
-                              style={{ marginTop: '6px', marginBottom: 0 }}
-                              autoFocus
-                            />
-                          )}
-                          <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem', display: 'block', marginTop: '4px' }}>
-                            {t.modelVersionHint}
-                          </small>
-                        </>
+                        <select
+                          className="inputField"
+                          value={modelVersion}
+                          onChange={(e) => setModelVersion(e.target.value)}
+                        >
+                          <option value="">{defaultModel ? `${defaultModel.value} (default)` : ''}</option>
+                          {knownModels.filter(m => !m.isDefault).map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                          ))}
+                        </select>
                       );
                     })()}
                   </div>
