@@ -777,7 +777,7 @@ body {
 }
 
 .dashboard-right {
-  flex: 1.5;
+  flex: 1;
   min-width: 0;
 }
 
