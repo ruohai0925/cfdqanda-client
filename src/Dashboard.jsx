@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import toast from 'react-hot-toast';
 import FileBrowser from './components/FileBrowser';
 import promptExamples from './data/promptExamples';
+import { formatFileSize } from './utils/fileUtils';
 
 // --- Language dictionary ---
 const strings = {
@@ -953,6 +954,11 @@ export default function Dashboard({ session, language, setLanguage }) {
                           borderRadius: '10px',
                         }}>
                           {t.pipelineStages[sim.pipeline_stage] || sim.pipeline_stage}
+                        </span>
+                      )}
+                      {storageUsage?.per_task?.[String(sim.id)] && (
+                        <span className="case-storage-badge">
+                          {formatFileSize(storageUsage.per_task[String(sim.id)])}
                         </span>
                       )}
                     </div>
