@@ -6,13 +6,13 @@ body {
     background-color: #f4f4f9;
     color: #333;
     margin: 0;
-    padding: 12px;
+    padding: 0;
   }
   
-  /* 容器样式 */
+  /* 容器样式 (login page) */
   .container {
     max-width: 500px;
-    margin: auto;
+    margin: 40px auto;
     padding: 20px;
     background-color: white;
     border-radius: 8px;
@@ -746,10 +746,8 @@ body {
 
 /* ===== Dashboard layout ===== */
 .dashboard-container {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 0 24px;
   width: 100%;
+  padding: 0 2rem;
   box-sizing: border-box;
 }
 
@@ -757,7 +755,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 1rem;
+  padding: 1rem 0;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
@@ -771,15 +769,15 @@ body {
 }
 
 .dashboard-left {
-  flex: 0 0 380px;
+  flex: 1;
   position: sticky;
   top: 20px;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
 }
 
 .dashboard-right {
-  flex: 1;
+  flex: 1.5;
   min-width: 0;
 }
 
@@ -791,11 +789,8 @@ body {
 
 /* Mobile: stack vertically */
 @media (max-width: 767px) {
-  body {
-    padding: 10px;
-  }
   .dashboard-container {
-    padding: 0 8px;
+    padding: 0 12px;
   }
   .dashboard-layout {
     flex-direction: column;
