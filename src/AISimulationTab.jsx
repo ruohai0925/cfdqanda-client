@@ -8,9 +8,6 @@ import { formatFileSize } from './utils/fileUtils';
 // --- Language dictionary ---
 const strings = {
   zh: {
-    dashboardTitle: '计算流体力学问答',
-    welcome: '欢迎',
-    signOut: '登出',
     newSimulationTitle: '创建新的仿真任务',
     promptPlaceholder: '请在这里输入你的仿真需求...',
     submitButton: '提交任务',
@@ -51,6 +48,10 @@ const strings = {
     codexTokenLabel: 'Codex 认证 Token',
     codexTokenPlaceholder: '粘贴 ~/.codex/auth.json 中的 access_token',
     codexTokenHint: '运行 codex login 后，从 ~/.codex/auth.json 复制 token。留空则使用服务器默认认证。',
+    builtInSolver: '内置求解器',
+    solverOpenFOAM: 'OpenFOAM v10',
+    solverAMReX: 'AMReX',
+    solverAMReXNote: 'AMReX-Agent 正在开发中，敬请期待。',
     cancelButton: '取消',
     cancellingButton: '取消中...',
     taskCancelledToast: '任务已取消',
@@ -92,16 +93,11 @@ const strings = {
     browsePreRunButton: '查看 Pre-Run 结果',
     browseFilesReviewButton: '查看生成文件',
     browseFilesButton: '浏览文件',
-    cloudStorage: '云端存储',
     cloudStorageDetail: '{count} 个任务',
-    cloudStorageLoading: '加载中...',
     expiresInDays: '{days} 天后自动删除',
     expiresToday: '今天将自动删除',
   },
   en: {
-    dashboardTitle: 'CFDQandA',
-    welcome: 'Welcome',
-    signOut: 'Sign Out',
     newSimulationTitle: 'Create a new simulation task',
     promptPlaceholder: 'Enter your simulation requirements here...',
     submitButton: 'Submit Task',
@@ -142,6 +138,10 @@ const strings = {
     codexTokenLabel: 'Codex Auth Token',
     codexTokenPlaceholder: 'Paste access_token from ~/.codex/auth.json',
     codexTokenHint: 'Run "codex login", then copy the token from ~/.codex/auth.json. Leave empty to use server default auth.',
+    builtInSolver: 'Built-in Solver',
+    solverOpenFOAM: 'OpenFOAM v10',
+    solverAMReX: 'AMReX',
+    solverAMReXNote: 'AMReX-Agent is under development. Coming soon.',
     cancelButton: 'Cancel',
     cancellingButton: 'Cancelling...',
     taskCancelledToast: 'Task cancelled',
@@ -183,9 +183,7 @@ const strings = {
     browsePreRunButton: 'View Pre-Run Results',
     browseFilesReviewButton: 'View Generated Files',
     browseFilesButton: 'Browse Files',
-    cloudStorage: 'Cloud Storage',
     cloudStorageDetail: '{count} tasks',
-    cloudStorageLoading: 'Loading...',
     expiresInDays: 'Auto-deletes in {days}d',
     expiresToday: 'Auto-deletes today',
   }
@@ -239,7 +237,7 @@ const MODEL_VERSIONS = {
   ],
 };
 
-export default function Dashboard({ session, language, setLanguage }) {
+export default function AISimulationTab({ session, language, storageUsage }) {
   const [loading, setLoading] = useState(true);
   const [simulations, setSimulations] = useState([]);
   const [newPrompt, setNewPrompt] = useState('');
@@ -247,6 +245,9 @@ export default function Dashboard({ session, language, setLanguage }) {
   const [showFileBrowser, setShowFileBrowser] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedPrompts, setExpandedPrompts] = useState(new Set());
+
+  // Solver backend state
+  const [solverBackend, setSolverBackend] = useState('openfoam-v10');
 
   // Model settings state
   const [showModelSettings, setShowModelSettings] = useState(false);
@@ -266,21 +267,10 @@ export default function Dashboard({ session, language, setLanguage }) {
   // Per-checkpoint user comments (jobId -> string)
   const [checkpointComments, setCheckpointComments] = useState({});
 
-  // Cloud storage usage state
-  const [storageUsage, setStorageUsage] = useState(null);
+  const [cancellingJobs, setCancellingJobs] = useState(new Set());
 
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
-
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-    if (error) {
-      // Token expired/invalid → force-clear local session
-      const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
-      localStorage.removeItem(storageKey);
-      window.location.reload();
-    }
-  };
 
   // Download ZIP
   const handleDownloadZip = async (simulation) => {
@@ -371,9 +361,6 @@ export default function Dashboard({ session, language, setLanguage }) {
       toast.error(err.message);
     }
   };
-
-  // Cancel a queued or running simulation
-  const [cancellingJobs, setCancellingJobs] = useState(new Set());
 
   const handleCancel = async (sim) => {
     const jobId = sim.id;
@@ -497,30 +484,6 @@ export default function Dashboard({ session, language, setLanguage }) {
     }
   }
 
-  // Fetch cloud storage usage from API
-  async function fetchStorageUsage() {
-    try {
-      const token = session?.access_token;
-      if (!token) return;
-      const resp = await fetch(`${API_URL}/api/v1/user/storage`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        setStorageUsage(data);
-      }
-    } catch {
-      // Silent fail — non-critical UI element
-    }
-  }
-
-  // Fetch storage usage on mount and every 5 minutes
-  useEffect(() => {
-    fetchStorageUsage();
-    const interval = setInterval(fetchStorageUsage, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [session]);
-
   useEffect(() => {
     getSimulations();
     const subscription = supabase
@@ -576,6 +539,9 @@ export default function Dashboard({ session, language, setLanguage }) {
     setLoading(true);
     try {
       const requestBody = { prompt: newPrompt };
+      if (solverBackend !== 'openfoam-v10') {
+        requestBody.solver_backend = solverBackend;
+      }
       if (showModelSettings && (modelProvider || effectiveVersion || apiKey || codexToken)) {
         const llmConfig = {};
         if (modelProvider) llmConfig.model_provider = modelProvider;
@@ -642,45 +608,33 @@ export default function Dashboard({ session, language, setLanguage }) {
   ];
 
   return (
-    <div className="dashboard-container">
-      {/* Top header bar */}
-      <div className="dashboard-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <h2 style={{ margin: 0 }}>{t.dashboardTitle}</h2>
-          <div>
-            <button onClick={() => setLanguage('en')} disabled={language === 'en'}>EN</button>
-            <button onClick={() => setLanguage('zh')} disabled={language === 'zh'}>ZH</button>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t.welcome}, {session.user.email}!</span>
-          {storageUsage && (
-            <span
-              className="storage-indicator"
-              title={t.cloudStorageDetail.replace('{count}', storageUsage.task_count)}
-              style={{
-                color: storageUsage.total_bytes < 500 * 1024 * 1024
-                  ? 'var(--success)'
-                  : storageUsage.total_bytes < 1024 * 1024 * 1024
-                    ? 'var(--warning)'
-                    : 'var(--danger)',
-              }}
-            >
-              {t.cloudStorage}: {storageUsage.total_display}
-            </span>
-          )}
-          <button className="button-block button-outline" style={{ width: 'auto', margin: 0 }} onClick={handleSignOut}>
-            {t.signOut}
-          </button>
-        </div>
-      </div>
-
+    <>
       {/* Two-column layout */}
       <div className="dashboard-layout">
         {/* Left panel: task submission form */}
         <div className="dashboard-left">
           <h3>{t.newSimulationTitle}</h3>
           <form onSubmit={handleSubmit}>
+
+          {/* Solver selector */}
+          <div style={{ margin: '12px 0' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+              {t.builtInSolver}
+            </label>
+            <select
+              value={solverBackend}
+              onChange={(e) => setSolverBackend(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+            >
+              <option value="openfoam-v10">{t.solverOpenFOAM}</option>
+              <option value="amrex">{t.solverAMReX}</option>
+            </select>
+            {solverBackend === 'amrex' && (
+              <small style={{ display: 'block', marginTop: '4px', color: 'var(--purple)', fontSize: '0.78rem' }}>
+                {t.solverAMReXNote}
+              </small>
+            )}
+          </div>
 
           {/* Model settings collapsible */}
           <div style={{ margin: '12px 0' }}>
@@ -1124,6 +1078,6 @@ export default function Dashboard({ session, language, setLanguage }) {
           }}
         />
       )}
-    </div>
+    </>
   );
 }

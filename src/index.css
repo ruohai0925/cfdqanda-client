@@ -1026,7 +1026,7 @@ select {
   align-items: center;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -1039,6 +1039,36 @@ select {
   border: 1px solid var(--border);
   background: var(--bg-tertiary);
   white-space: nowrap;
+}
+
+/* Main navigation tabs (AI / Expert) */
+.main-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.main-tab {
+  padding: 10px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.main-tab:hover {
+  color: var(--text-primary);
+}
+
+.main-tab-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .dashboard-layout {

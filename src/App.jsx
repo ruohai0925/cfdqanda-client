@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { Toaster } from 'react-hot-toast'
 import Auth from './Auth'
-import Dashboard from './Dashboard'
+import MainLayout from './MainLayout'
 import PrivacyPolicy from './PrivacyPolicy'
 
 const footerStrings = {
@@ -60,7 +60,7 @@ function App() {
     return (
       <>
         <Toaster position="top-center" />
-        <Dashboard key={session.user.id} session={session} language={language} setLanguage={setLanguage} />
+        <MainLayout key={session.user.id} session={session} language={language} setLanguage={setLanguage} />
         <footer className="app-footer">
           <a href="#privacy" onClick={navigateToPrivacy}>
             {footerStrings[language].privacyLink}
