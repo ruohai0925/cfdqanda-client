@@ -276,8 +276,8 @@ export default function Dashboard({ session, language, setLanguage }) {
             toast.dismiss(toastObj.id);
           }}
           style={{
-            background: '#6200ea',
-            color: 'white',
+            background: 'var(--accent)',
+            color: '#ffffff',
             border: 'none',
             padding: '4px 10px',
             borderRadius: '4px',
@@ -554,7 +554,7 @@ export default function Dashboard({ session, language, setLanguage }) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '0.9rem', color: '#666' }}>{t.welcome}, {session.user.email}!</span>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t.welcome}, {session.user.email}!</span>
           <button className="button-block button-outline" style={{ width: 'auto', margin: 0 }} onClick={handleSignOut}>
             {t.signOut}
           </button>
@@ -576,7 +576,7 @@ export default function Dashboard({ session, language, setLanguage }) {
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#6200ea',
+                color: 'var(--accent)',
                 cursor: 'pointer',
                 padding: 0,
                 fontSize: '0.9rem',
@@ -589,9 +589,9 @@ export default function Dashboard({ session, language, setLanguage }) {
               <div style={{
                 marginTop: '10px',
                 padding: '14px',
-                border: '1px solid #e0e0e0',
+                border: '1px solid var(--border)',
                 borderRadius: '6px',
-                background: '#fafafa',
+                background: 'var(--bg-tertiary)',
               }}>
                 <div style={{ marginBottom: '10px' }}>
                   <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -605,7 +605,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                       setApiKey('');
                       setCodexToken('');
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                   >
                     <option value="openai-codex">{t.codexFreeLabel}</option>
                     <option value="openai">OpenAI (API Key)</option>
@@ -647,7 +647,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                       autoComplete="off"
                       style={{ marginBottom: '4px' }}
                     />
-                    <small style={{ color: '#888', fontSize: '0.78rem' }}>{t.apiKeyHint}</small>
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{t.apiKeyHint}</small>
                   </div>
                 )}
 
@@ -665,7 +665,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                       autoComplete="off"
                       style={{ marginBottom: '4px' }}
                     />
-                    <small style={{ color: '#888', fontSize: '0.78rem' }}>{t.codexTokenHint}</small>
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{t.codexTokenHint}</small>
                   </div>
                 )}
               </div>
@@ -680,7 +680,7 @@ export default function Dashboard({ session, language, setLanguage }) {
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#6200ea',
+                color: 'var(--accent)',
                 cursor: 'pointer',
                 padding: 0,
                 fontSize: '0.9rem',
@@ -693,9 +693,9 @@ export default function Dashboard({ session, language, setLanguage }) {
               <div style={{
                 marginTop: '10px',
                 padding: '14px',
-                border: '1px solid #e0e0e0',
+                border: '1px solid var(--border)',
                 borderRadius: '6px',
-                background: '#fafafa',
+                background: 'var(--bg-tertiary)',
               }}>
                 {/* Pipeline mode selector */}
                 <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -704,7 +704,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                 <select
                   value={pipelineMode}
                   onChange={(e) => setPipelineMode(e.target.value)}
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', marginBottom: '12px' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid var(--border)', marginBottom: '12px' }}
                 >
                   <option value="auto">{t.pipelineModeAuto}</option>
                   <option value="controlled">{t.pipelineModeControlled}</option>
@@ -747,7 +747,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                     <select
                       value={preRunEndTime}
                       onChange={(e) => setPreRunEndTime(e.target.value)}
-                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                     >
                       <option value="">{t.preRunDefault}</option>
                       <option value="1">{t.preRunSingleStep}</option>
@@ -838,8 +838,9 @@ export default function Dashboard({ session, language, setLanguage }) {
                       {sim.pipeline_mode === 'controlled' && sim.pipeline_stage && (
                         <span style={{
                           fontSize: '0.75rem',
-                          color: '#666',
-                          background: '#f0f0f0',
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--text-secondary)',
+                          background: 'var(--bg-tertiary)',
                           padding: '2px 8px',
                           borderRadius: '10px',
                         }}>
@@ -903,11 +904,11 @@ export default function Dashboard({ session, language, setLanguage }) {
                       <div style={{
                         marginTop: '12px',
                         padding: '12px',
-                        border: '1px solid #ff9800',
+                        border: '1px solid rgba(210, 153, 34, 0.4)',
                         borderRadius: '6px',
-                        background: '#fff8e1',
+                        background: 'var(--warning-subtle)',
                       }}>
-                        <div style={{ fontWeight: 600, marginBottom: '8px', color: '#e65100' }}>
+                        <div style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--warning)' }}>
                           {t.pipelineStages[sim.pipeline_stage] || sim.pipeline_stage}
                         </div>
                         {sim.result_data?.checkpoint_data && (

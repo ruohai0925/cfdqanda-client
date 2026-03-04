@@ -512,7 +512,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
                   <span
                     className="file-tree-name"
                     onClick={() => loadFileContent(item.path)}
-                    style={{ cursor: 'pointer', color: '#6200ea' }}
+                    style={{ cursor: 'pointer' }}
                   >
                     {name}
                   </span>

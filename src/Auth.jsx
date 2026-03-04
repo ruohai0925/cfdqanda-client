@@ -89,8 +89,8 @@ export default function Auth({ language, setLanguage }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h1 className="header">{t.title}</h1>
           <div>
-            <button onClick={() => setLanguage('en')} disabled={language==='en'} style={{ marginRight: '5px', padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', background: language==='en' ? '#6200ea' : 'white', color: language==='en' ? 'white' : '#6200ea' }}>EN</button>
-            <button onClick={() => setLanguage('zh')} disabled={language==='zh'} style={{ padding: '4px 8px', border: '1px solid #ccc', borderRadius: '4px', background: language==='zh' ? '#6200ea' : 'white', color: language==='zh' ? 'white' : '#6200ea' }}>ZH</button>
+            <button onClick={() => setLanguage('en')} disabled={language==='en'} style={{ marginRight: '5px', padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='en' ? 'var(--accent)' : 'transparent', color: language==='en' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>EN</button>
+            <button onClick={() => setLanguage('zh')} disabled={language==='zh'} style={{ padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='zh' ? 'var(--accent)' : 'transparent', color: language==='zh' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>ZH</button>
           </div>
         </div>
         <p className="description">{t.description}</p>
