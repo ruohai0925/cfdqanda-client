@@ -95,6 +95,9 @@ const strings = {
     browsePreRunButton: '查看 Pre-Run 结果',
     browseFilesReviewButton: '查看生成文件',
     browseFilesButton: '浏览文件',
+    cloudStorage: '云端存储',
+    cloudStorageDetail: '{count} 个任务',
+    cloudStorageLoading: '加载中...',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -185,6 +188,9 @@ const strings = {
     browsePreRunButton: 'View Pre-Run Results',
     browseFilesReviewButton: 'View Generated Files',
     browseFilesButton: 'Browse Files',
+    cloudStorage: 'Cloud Storage',
+    cloudStorageDetail: '{count} tasks',
+    cloudStorageLoading: 'Loading...',
   }
 };
 
@@ -242,6 +248,9 @@ export default function Dashboard({ session, language, setLanguage }) {
 
   // Checkpoint action state (track which jobs are being confirmed/rejected)
   const [checkpointActionJobs, setCheckpointActionJobs] = useState(new Set());
+
+  // Cloud storage usage state
+  const [storageUsage, setStorageUsage] = useState(null);
 
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
@@ -459,6 +468,30 @@ export default function Dashboard({ session, language, setLanguage }) {
     }
   }
 
+  // Fetch cloud storage usage from API
+  async function fetchStorageUsage() {
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession?.access_token) return;
+      const resp = await fetch(`${API_URL}/api/v1/user/storage`, {
+        headers: { 'Authorization': `Bearer ${currentSession.access_token}` },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setStorageUsage(data);
+      }
+    } catch {
+      // Silent fail — non-critical UI element
+    }
+  }
+
+  // Fetch storage usage on mount and every 5 minutes
+  useEffect(() => {
+    fetchStorageUsage();
+    const interval = setInterval(fetchStorageUsage, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [session]);
+
   useEffect(() => {
     getSimulations();
     const subscription = supabase
@@ -601,6 +634,21 @@ export default function Dashboard({ session, language, setLanguage }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t.welcome}, {session.user.email}!</span>
+          {storageUsage && (
+            <span
+              className="storage-indicator"
+              title={t.cloudStorageDetail.replace('{count}', storageUsage.task_count)}
+              style={{
+                color: storageUsage.total_bytes < 500 * 1024 * 1024
+                  ? 'var(--success)'
+                  : storageUsage.total_bytes < 1024 * 1024 * 1024
+                    ? 'var(--warning)'
+                    : 'var(--danger)',
+              }}
+            >
+              {t.cloudStorage}: {storageUsage.total_display}
+            </span>
+          )}
           <button className="button-block button-outline" style={{ width: 'auto', margin: 0 }} onClick={handleSignOut}>
             {t.signOut}
           </button>

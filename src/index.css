@@ -983,6 +983,16 @@ select {
   gap: 8px;
 }
 
+.storage-indicator {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  white-space: nowrap;
+}
+
 .dashboard-layout {
   display: flex;
   gap: 2rem;
