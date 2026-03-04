@@ -490,10 +490,10 @@ export default function Dashboard({ session, language, setLanguage }) {
   // Fetch cloud storage usage from API
   async function fetchStorageUsage() {
     try {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      if (!currentSession?.access_token) return;
+      const token = session?.access_token;
+      if (!token) return;
       const resp = await fetch(`${API_URL}/api/v1/user/storage`, {
-        headers: { 'Authorization': `Bearer ${currentSession.access_token}` },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
       if (resp.ok) {
         const data = await resp.json();
