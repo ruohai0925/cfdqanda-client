@@ -56,16 +56,24 @@ function App() {
     )
   }
 
+  if (session) {
+    return (
+      <>
+        <Toaster position="top-center" />
+        <Dashboard key={session.user.id} session={session} language={language} setLanguage={setLanguage} />
+        <footer className="app-footer">
+          <a href="#privacy" onClick={navigateToPrivacy}>
+            {footerStrings[language].privacyLink}
+          </a>
+        </footer>
+      </>
+    )
+  }
+
   return (
     <div className="container" style={{ padding: '50px 20px 100px 20px' }}>
       <Toaster position="top-center" />
-
-      {!session ? (
-        <Auth language={language} setLanguage={setLanguage} />
-      ) : (
-        <Dashboard key={session.user.id} session={session} language={language} setLanguage={setLanguage} />
-      )}
-
+      <Auth language={language} setLanguage={setLanguage} />
       <footer className="app-footer">
         <a href="#privacy" onClick={navigateToPrivacy}>
           {footerStrings[language].privacyLink}
