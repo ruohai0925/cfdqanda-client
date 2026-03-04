@@ -96,6 +96,8 @@ const strings = {
     cloudStorage: '云端存储',
     cloudStorageDetail: '{count} 个任务',
     cloudStorageLoading: '加载中...',
+    expiresInDays: '{days} 天后自动删除',
+    expiresToday: '今天将自动删除',
   },
   en: {
     dashboardTitle: 'CFDQandA',
@@ -187,11 +189,31 @@ const strings = {
     cloudStorage: 'Cloud Storage',
     cloudStorageDetail: '{count} tasks',
     cloudStorageLoading: 'Loading...',
+    expiresInDays: 'Auto-deletes in {days}d',
+    expiresToday: 'Auto-deletes today',
   }
 };
 
 const PROMPT_TRUNCATE_LENGTH = 120;
 const UNDO_TOAST_DURATION = 8000; // 8 seconds to click undo
+
+// TTL constants (must match worker.py)
+const TTL_FAILED_DAYS = 7;
+const TTL_COMPLETED_DAYS = 14;
+
+// Returns days remaining before auto-deletion, or null if no TTL applies
+function getDaysUntilExpiry(sim) {
+  const ttl = (sim.status === 'failed' || sim.status === 'cancelled')
+    ? TTL_FAILED_DAYS
+    : sim.status === 'completed'
+      ? TTL_COMPLETED_DAYS
+      : null;
+  if (ttl === null) return null;
+  const created = new Date(sim.created_at);
+  const expiresAt = new Date(created.getTime() + ttl * 24 * 60 * 60 * 1000);
+  const remaining = Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
+  return remaining;
+}
 
 // Known model versions per provider (sourced from Foam-Agent src/config.py + src/utils.py)
 const MODEL_VERSIONS = {
@@ -960,7 +982,20 @@ export default function Dashboard({ session, language, setLanguage }) {
                       )}
                     </p>
                     <div className="card-time-row">
-                      <small>{t.time}: {new Date(sim.created_at).toLocaleString()}</small>
+                      <small>
+                        {t.time}: {new Date(sim.created_at).toLocaleString()}
+                        {(() => {
+                          const days = getDaysUntilExpiry(sim);
+                          if (days === null) return null;
+                          return (
+                            <span className={`expiry-badge${days <= 3 ? ' expiry-urgent' : ''}`}>
+                              {days <= 0
+                                ? t.expiresToday
+                                : t.expiresInDays.replace('{days}', days)}
+                            </span>
+                          );
+                        })()}
+                      </small>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         {sim.status === 'completed' && sim.result_data?.file_tree && (
                           <button
