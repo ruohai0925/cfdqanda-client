@@ -954,6 +954,7 @@ export default function Dashboard({ session, language, setLanguage }) {
           language={language}
           apiUrl={API_URL}
           userRating={selectedSimulation.user_rating}
+          userComment={selectedSimulation.user_comment}
           onClose={() => {
             setShowFileBrowser(false);
             setSelectedSimulation(null);

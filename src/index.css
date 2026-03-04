@@ -496,6 +496,22 @@ body {
   color: white;
 }
 
+.copy-text-btn {
+  background: transparent;
+  border: 1px solid #6200ea;
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #6200ea;
+  transition: all 0.2s;
+}
+
+.copy-text-btn:hover {
+  background: #6200ea;
+  color: white;
+}
+
 .file-tree-children {
   margin-left: 0;
 }
@@ -590,6 +606,16 @@ body {
 .file-feedback-btn:hover {
   background-color: #28a745;
   color: white;
+}
+
+.file-feedback-btn.saved {
+  border-color: #2e7d32;
+  background-color: #e8f5e9;
+}
+
+.file-saved-indicator {
+  font-size: 0.75rem;
+  margin-left: 4px;
 }
 
 /* 反馈模态框样式 */
@@ -966,24 +992,10 @@ body {
   box-shadow: 0 0 0 2px rgba(98, 0, 234, 0.1);
 }
 
-.rating-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.rating-skip-btn {
-  padding: 6px 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: white;
-  color: #666;
-  cursor: pointer;
+.rating-saved-indicator {
+  color: #2e7d32;
   font-size: 0.85rem;
-  transition: all 0.2s;
-}
-
-.rating-skip-btn:hover:not(:disabled) {
-  background: #f0f0f0;
+  font-weight: 600;
 }
 
 .rating-submit-btn {
@@ -1002,7 +1014,6 @@ body {
   background: #5000b9;
 }
 
-.rating-skip-btn:disabled,
 .rating-submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

@@ -17,25 +17,25 @@ const fileBrowserStrings = {
     noPreview: '此文件类型不支持预览，请下载查看',
     empty: '暂无文件',
     fileSize: '文件大小',
+    copyText: '复制文本',
+    copySuccess: '已复制到剪贴板',
     addFeedback: '添加反馈',
     feedback: '反馈',
     feedbackPlaceholder: '请输入反馈内容（最多5KB）...',
-    submitFeedback: '提交反馈',
+    save: '保存',
     cancelFeedback: '取消',
-    feedbackSuccess: '反馈提交成功',
+    feedbackSaved: '已保存',
     feedbackError: '反馈提交失败',
     feedbackTooLarge: '反馈内容超过5KB限制',
     feedbackRequired: '请输入反馈内容',
-    feedbackTitle: '添加反馈',
+    feedbackTitle: '文件反馈',
     feedbackFor: '反馈文件',
-    ratingTitle: '请对此任务的结果进行评价',
+    caseFeedbackTitle: '整体评价',
     ratingSuccess: '成功',
     ratingPartial: '部分成功',
     ratingFailed: '失败',
     ratingCommentPlaceholder: '一句话评价（可选，最多500字）',
-    ratingSubmit: '提交评价',
-    ratingSkip: '跳过',
-    ratingSubmitted: '评价已提交',
+    ratingSaved: '评价已保存',
     ratingError: '评价提交失败',
     openfoamVersion: '生成的文件基于 OpenFOAM v10 (Foundation)，与 ESI 版本可能不兼容',
   },
@@ -51,31 +51,31 @@ const fileBrowserStrings = {
     noPreview: 'This file type cannot be previewed. Please download to view.',
     empty: 'No files',
     fileSize: 'File Size',
+    copyText: 'Copy Text',
+    copySuccess: 'Copied to clipboard',
     addFeedback: 'Add Feedback',
     feedback: 'Feedback',
     feedbackPlaceholder: 'Enter your feedback (max 5KB)...',
-    submitFeedback: 'Submit Feedback',
+    save: 'Save',
     cancelFeedback: 'Cancel',
-    feedbackSuccess: 'Feedback submitted successfully',
+    feedbackSaved: 'Saved',
     feedbackError: 'Failed to submit feedback',
     feedbackTooLarge: 'Feedback exceeds 5KB limit',
     feedbackRequired: 'Please enter feedback content',
-    feedbackTitle: 'Add Feedback',
+    feedbackTitle: 'File Feedback',
     feedbackFor: 'Feedback for',
-    ratingTitle: 'How would you rate this simulation result?',
+    caseFeedbackTitle: 'Overall Rating',
     ratingSuccess: 'Success',
     ratingPartial: 'Partial',
     ratingFailed: 'Failed',
     ratingCommentPlaceholder: 'One-line comment (optional, max 500 chars)',
-    ratingSubmit: 'Submit Rating',
-    ratingSkip: 'Skip',
-    ratingSubmitted: 'Rating submitted',
+    ratingSaved: 'Rating saved',
     ratingError: 'Failed to submit rating',
     openfoamVersion: 'Generated files are based on OpenFOAM v10 (Foundation), may not be compatible with ESI version',
   }
 };
 
-export default function FileBrowser({ jobId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl, userRating }) {
+export default function FileBrowser({ jobId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl, userRating, userComment }) {
   const [expandedDirs, setExpandedDirs] = useState(new Set(['output'])); // 默认展开output目录
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
@@ -84,12 +84,13 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
   const [feedbackFile, setFeedbackFile] = useState(null);
   const [feedbackContent, setFeedbackContent] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [savedFeedbackFiles, setSavedFeedbackFiles] = useState(new Set());
 
-  // Rating panel state
-  const [showRatingPanel, setShowRatingPanel] = useState(false);
-  const [selectedRating, setSelectedRating] = useState(null);
-  const [ratingComment, setRatingComment] = useState('');
+  // Rating panel state (always visible, initialized from props)
+  const [selectedRating, setSelectedRating] = useState(userRating || null);
+  const [ratingComment, setRatingComment] = useState(userComment || '');
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingSaved, setRatingSaved] = useState(!!userRating);
   
   // 拖拽状态
   const [fileBrowserPosition, setFileBrowserPosition] = useState({ x: 0, y: 0 });
@@ -365,7 +366,8 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
         throw new Error(errorData.detail || t.feedbackError);
       }
 
-      toast.success(t.feedbackSuccess);
+      toast.success(t.feedbackSaved);
+      setSavedFeedbackFiles(prev => new Set(prev).add(feedbackFile.path));
       closeFeedbackModal();
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -375,16 +377,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
     }
   };
 
-  // Intercept close: show rating panel if user hasn't rated yet
-  const handleRequestClose = () => {
-    if (!userRating && !showRatingPanel) {
-      setShowRatingPanel(true);
-      return;
-    }
-    onClose();
-  };
-
-  // Submit rating to API
+  // Submit rating to API (save, not close)
   const submitRating = async () => {
     if (!selectedRating) return;
 
@@ -409,8 +402,8 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
         throw new Error(errorData.detail || t.ratingError);
       }
 
-      toast.success(t.ratingSubmitted);
-      onClose();
+      toast.success(t.ratingSaved);
+      setRatingSaved(true);
     } catch (error) {
       console.error('Error submitting rating:', error);
       toast.error(error.message || t.ratingError);
@@ -468,15 +461,18 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
                     {name}
                   </span>
                   <span className="file-tree-size">{formatFileSize(item.size)}</span>
+                  {savedFeedbackFiles.has(item.path) && (
+                    <span className="file-saved-indicator" title={t.feedbackSaved}>&#x2705;</span>
+                  )}
                   <button
-                    className="file-feedback-btn"
+                    className={`file-feedback-btn${savedFeedbackFiles.has(item.path) ? ' saved' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       openFeedbackModal(item.path, item.name);
                     }}
                     title={t.addFeedback}
                   >
-                    💬
+                    &#x1F4AC;
                   </button>
                   <button
                     className="file-download-btn"
@@ -506,7 +502,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
           e.stopPropagation();
           closeFeedbackModal();
         } else {
-          handleRequestClose();
+          onClose();
         }
       }}
     >
@@ -524,7 +520,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
           style={{ cursor: 'grab' }}
         >
           <h2>{t.title} - Task #{jobId}</h2>
-          <button className="file-browser-close" onClick={handleRequestClose}>
+          <button className="file-browser-close" onClick={onClose}>
             {t.close}
           </button>
         </div>
@@ -560,12 +556,23 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
                 <div className="file-preview-header">
                   <strong>{selectedFile}</strong>
                   {fileContent && (
-                    <button
-                      className="file-download-btn"
-                      onClick={() => downloadFile(selectedFile, selectedFile.split('/').pop())}
-                    >
-                      {t.download}
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="copy-text-btn"
+                        onClick={() => {
+                          navigator.clipboard.writeText(fileContent);
+                          toast.success(t.copySuccess);
+                        }}
+                      >
+                        {t.copyText}
+                      </button>
+                      <button
+                        className="file-download-btn"
+                        onClick={() => downloadFile(selectedFile, selectedFile.split('/').pop())}
+                      >
+                        {t.download}
+                      </button>
+                    </div>
                   )}
                 </div>
                 {fileContent ? (
@@ -580,58 +587,50 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
           </div>
         </div>
 
-        {/* Rating panel at the bottom of FileBrowser */}
-        {showRatingPanel && (
-          <div className="rating-panel">
-            <div className="rating-panel-title">{t.ratingTitle}</div>
-            <div className="rating-panel-body">
-              <div className="rating-buttons">
-                <button
-                  className={`rating-btn rating-btn-success ${selectedRating === 1 ? 'rating-btn-selected' : ''}`}
-                  onClick={() => setSelectedRating(1)}
-                >
-                  {t.ratingSuccess}
-                </button>
-                <button
-                  className={`rating-btn rating-btn-partial ${selectedRating === 2 ? 'rating-btn-selected' : ''}`}
-                  onClick={() => setSelectedRating(2)}
-                >
-                  {t.ratingPartial}
-                </button>
-                <button
-                  className={`rating-btn rating-btn-failed ${selectedRating === 3 ? 'rating-btn-selected' : ''}`}
-                  onClick={() => setSelectedRating(3)}
-                >
-                  {t.ratingFailed}
-                </button>
-              </div>
-              <input
-                type="text"
-                className="rating-comment-input"
-                placeholder={t.ratingCommentPlaceholder}
-                value={ratingComment}
-                onChange={(e) => setRatingComment(e.target.value)}
-                maxLength={500}
-              />
-              <div className="rating-actions">
-                <button
-                  className="rating-skip-btn"
-                  onClick={onClose}
-                  disabled={submittingRating}
-                >
-                  {t.ratingSkip}
-                </button>
-                <button
-                  className="rating-submit-btn"
-                  onClick={submitRating}
-                  disabled={submittingRating || !selectedRating}
-                >
-                  {submittingRating ? '...' : t.ratingSubmit}
-                </button>
-              </div>
-            </div>
+        {/* Overall rating panel — always visible at the bottom */}
+        <div className="rating-panel">
+          <div className="rating-panel-title">
+            {t.caseFeedbackTitle}
+            {ratingSaved && <span className="rating-saved-indicator"> &#x2705; {t.ratingSaved}</span>}
           </div>
-        )}
+          <div className="rating-panel-body">
+            <div className="rating-buttons">
+              <button
+                className={`rating-btn rating-btn-success ${selectedRating === 1 ? 'rating-btn-selected' : ''}`}
+                onClick={() => { setSelectedRating(1); setRatingSaved(false); }}
+              >
+                {t.ratingSuccess}
+              </button>
+              <button
+                className={`rating-btn rating-btn-partial ${selectedRating === 2 ? 'rating-btn-selected' : ''}`}
+                onClick={() => { setSelectedRating(2); setRatingSaved(false); }}
+              >
+                {t.ratingPartial}
+              </button>
+              <button
+                className={`rating-btn rating-btn-failed ${selectedRating === 3 ? 'rating-btn-selected' : ''}`}
+                onClick={() => { setSelectedRating(3); setRatingSaved(false); }}
+              >
+                {t.ratingFailed}
+              </button>
+            </div>
+            <input
+              type="text"
+              className="rating-comment-input"
+              placeholder={t.ratingCommentPlaceholder}
+              value={ratingComment}
+              onChange={(e) => { setRatingComment(e.target.value); setRatingSaved(false); }}
+              maxLength={500}
+            />
+            <button
+              className="rating-submit-btn"
+              onClick={submitRating}
+              disabled={submittingRating || !selectedRating}
+            >
+              {submittingRating ? '...' : t.save}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 反馈模态框 */}
@@ -698,7 +697,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
                 onClick={submitFeedback}
                 disabled={submittingFeedback || !feedbackContent.trim()}
               >
-                {submittingFeedback ? t.loading : t.submitFeedback}
+                {submittingFeedback ? t.loading : t.save}
               </button>
             </div>
           </div>
