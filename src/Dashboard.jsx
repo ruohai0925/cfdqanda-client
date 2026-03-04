@@ -536,24 +536,29 @@ export default function Dashboard({ session, language, setLanguage }) {
 
   return (
     <div className="dashboard-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Top header bar */}
+      <div className="dashboard-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <h2>{t.dashboardTitle}</h2>
+          <h2 style={{ margin: 0 }}>{t.dashboardTitle}</h2>
           <div>
             <button onClick={() => setLanguage('en')} disabled={language === 'en'}>EN</button>
             <button onClick={() => setLanguage('zh')} disabled={language === 'zh'}>ZH</button>
           </div>
         </div>
-        <button className="button-block button-outline" style={{ width: 'auto' }} onClick={handleSignOut}>
-          {t.signOut}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ fontSize: '0.9rem', color: '#666' }}>{t.welcome}, {session.user.email}!</span>
+          <button className="button-block button-outline" style={{ width: 'auto', margin: 0 }} onClick={handleSignOut}>
+            {t.signOut}
+          </button>
+        </div>
       </div>
 
-      <p>{t.welcome}, {session.user.email}!</p>
-
-      <div style={{ marginTop: '2rem' }}>
-        <h3>{t.newSimulationTitle}</h3>
-        <form onSubmit={handleSubmit}>
+      {/* Two-column layout */}
+      <div className="dashboard-layout">
+        {/* Left panel: task submission form */}
+        <div className="dashboard-left">
+          <h3>{t.newSimulationTitle}</h3>
+          <form onSubmit={handleSubmit}>
 
           {/* Model settings collapsible */}
           <div style={{ margin: '12px 0' }}>
@@ -765,12 +770,12 @@ export default function Dashboard({ session, language, setLanguage }) {
           <button className="button-block" type="submit" disabled={loading || !newPrompt.trim()}>
             {loading ? t.submittingButton : t.submitButton}
           </button>
-        </form>
-      </div>
+          </form>
+        </div>
 
-      {/* History section */}
-      <div style={{ marginTop: '2rem' }}>
-        <h3>{t.historyTitle}</h3>
+        {/* Right panel: history */}
+        <div className="dashboard-right">
+          <h3>{t.historyTitle}</h3>
 
         {/* Filter tabs */}
         <div className="filter-tabs">
@@ -936,6 +941,7 @@ export default function Dashboard({ session, language, setLanguage }) {
             })}
           </ul>
         )}
+        </div>
       </div>
 
       {/* File browser modal (works for completed and checkpoint status) */}
