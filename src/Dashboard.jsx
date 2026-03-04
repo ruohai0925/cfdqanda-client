@@ -812,7 +812,7 @@ export default function Dashboard({ session, language, setLanguage }) {
               return (
                 <li key={sim.id} className="simulation-card">
                   <div className="card-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
                       <h4>{t.case} #{String(sim.id).substring(0, 8)}</h4>
                       <span className={`status-badge status-${sim.status}`}>
                         {sim.status}
