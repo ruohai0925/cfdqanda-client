@@ -47,7 +47,10 @@ const strings = {
     apiKeyRequired: '选择了 {provider} 但未填写 API Key，请输入你的 API Key。',
     apiKeyInvalidOpenAI: 'OpenAI API Key 应以 "sk-" 开头，请检查格式。',
     apiKeyInvalidAnthropic: 'Anthropic API Key 应以 "sk-ant-" 开头，请检查格式。',
-    codexFreeLabel: 'ChatGPT Codex（免费）',
+    codexFreeLabel: 'ChatGPT/Codex 订阅（推荐）',
+    codexTokenLabel: 'Codex 认证 Token',
+    codexTokenPlaceholder: '粘贴 ~/.codex/auth.json 中的 access_token',
+    codexTokenHint: '运行 codex login 后，从 ~/.codex/auth.json 复制 token。留空则使用服务器默认认证。',
     apiKeyNotRequired: '此提供商使用 ChatGPT 订阅认证，无需 API Key',
     cancelButton: '取消',
     cancellingButton: '取消中...',
@@ -130,7 +133,10 @@ const strings = {
     apiKeyRequired: 'You selected {provider} but did not provide an API Key. Please enter your API Key.',
     apiKeyInvalidOpenAI: 'OpenAI API Key should start with "sk-". Please check the format.',
     apiKeyInvalidAnthropic: 'Anthropic API Key should start with "sk-ant-". Please check the format.',
-    codexFreeLabel: 'ChatGPT Codex (Free)',
+    codexFreeLabel: 'ChatGPT/Codex Subscription (Recommended)',
+    codexTokenLabel: 'Codex Auth Token',
+    codexTokenPlaceholder: 'Paste access_token from ~/.codex/auth.json',
+    codexTokenHint: 'Run "codex login", then copy the token from ~/.codex/auth.json. Leave empty to use server default auth.',
     apiKeyNotRequired: 'Uses ChatGPT subscription auth. No API key needed.',
     cancelButton: 'Cancel',
     cancellingButton: 'Cancelling...',
@@ -188,9 +194,10 @@ export default function Dashboard({ session, language, setLanguage }) {
 
   // Model settings state
   const [showModelSettings, setShowModelSettings] = useState(false);
-  const [modelProvider, setModelProvider] = useState('');
+  const [modelProvider, setModelProvider] = useState('openai-codex');
   const [modelVersion, setModelVersion] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [codexToken, setCodexToken] = useState('');
 
   // Pre-run settings state
   const [showPreRunSettings, setShowPreRunSettings] = useState(false);
@@ -470,11 +477,12 @@ export default function Dashboard({ session, language, setLanguage }) {
     setLoading(true);
     try {
       const requestBody = { prompt: newPrompt };
-      if (showModelSettings && (modelProvider || modelVersion || apiKey)) {
+      if (showModelSettings && (modelProvider || modelVersion || apiKey || codexToken)) {
         const llmConfig = {};
         if (modelProvider) llmConfig.model_provider = modelProvider;
         if (modelVersion) llmConfig.model_version = modelVersion;
         if (apiKey) llmConfig.api_key = apiKey;
+        if (codexToken) llmConfig.codex_token = codexToken;
         requestBody.llm_config = llmConfig;
       }
       // Pre-run end time
@@ -595,14 +603,13 @@ export default function Dashboard({ session, language, setLanguage }) {
                       setModelProvider(e.target.value);
                       setModelVersion('');
                       setApiKey('');
+                      setCodexToken('');
                     }}
                     style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                   >
-                    <option value="">{t.useServerDefault}</option>
                     <option value="openai-codex">{t.codexFreeLabel}</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="ollama">Ollama (Local)</option>
+                    <option value="openai">OpenAI (API Key)</option>
+                    <option value="anthropic">Anthropic (API Key)</option>
                   </select>
                 </div>
 
@@ -619,8 +626,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                       placeholder={
                         modelProvider === 'openai-codex' ? 'gpt-5.3-codex' :
                         modelProvider === 'openai' ? 'gpt-4o' :
-                        modelProvider === 'anthropic' ? 'claude-sonnet-4-5-20250929' :
-                        modelProvider === 'ollama' ? 'qwen2.5:32b-instruct' : ''
+                        modelProvider === 'anthropic' ? 'claude-sonnet-4-5-20250929' : ''
                       }
                       style={{ marginBottom: 0 }}
                     />
@@ -646,9 +652,21 @@ export default function Dashboard({ session, language, setLanguage }) {
                 )}
 
                 {modelProvider === 'openai-codex' && (
-                  <small style={{ color: '#4caf50', fontSize: '0.82rem' }}>
-                    {t.apiKeyNotRequired}
-                  </small>
+                  <div style={{ marginBottom: '4px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                      {t.codexTokenLabel}
+                    </label>
+                    <input
+                      type="password"
+                      className="inputField"
+                      value={codexToken}
+                      onChange={(e) => setCodexToken(e.target.value)}
+                      placeholder={t.codexTokenPlaceholder}
+                      autoComplete="off"
+                      style={{ marginBottom: '4px' }}
+                    />
+                    <small style={{ color: '#888', fontSize: '0.78rem' }}>{t.codexTokenHint}</small>
+                  </div>
                 )}
               </div>
             )}
