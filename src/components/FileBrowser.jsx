@@ -102,6 +102,47 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
   const t = fileBrowserStrings[language] || fileBrowserStrings.en;
   const [fileTreeData, setFileTreeData] = useState(null);
 
+  // Load previously saved feedback markers from Supabase Storage on mount
+  useEffect(() => {
+    if (!fileTree?.files || !storageBasePath) return;
+
+    const loadSavedFeedbackMarkers = async () => {
+      // Collect unique parent directories from file tree
+      const dirs = new Set();
+      fileTree.files.forEach(f => {
+        const parts = f.path.split('/');
+        parts.pop();
+        dirs.add(parts.join('/'));
+      });
+
+      const savedPaths = new Set();
+      for (const dir of dirs) {
+        try {
+          const listPath = dir ? `${storageBasePath}/${dir}` : storageBasePath;
+          const { data } = await supabase.storage
+            .from('simulation_results')
+            .list(listPath);
+          if (data) {
+            data.forEach(item => {
+              if (item.name.endsWith('_feedback')) {
+                const originalName = item.name.slice(0, -'_feedback'.length);
+                const originalPath = dir ? `${dir}/${originalName}` : originalName;
+                savedPaths.add(originalPath);
+              }
+            });
+          }
+        } catch (e) {
+          // Non-critical — just won't show markers
+        }
+      }
+      if (savedPaths.size > 0) {
+        setSavedFeedbackFiles(savedPaths);
+      }
+    };
+
+    loadSavedFeedbackMarkers();
+  }, [fileTree, storageBasePath]);
+
   // 构建目录树
   useEffect(() => {
     if (!fileTree) {
@@ -257,11 +298,26 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
     }
   };
 
-  // 打开反馈模态框
-  const openFeedbackModal = (filePath, fileName) => {
+  // 打开反馈模态框 (load existing feedback if previously saved)
+  const openFeedbackModal = async (filePath, fileName) => {
     setFeedbackFile({ path: filePath, name: fileName });
     setFeedbackContent('');
     setShowFeedbackModal(true);
+
+    if (savedFeedbackFiles.has(filePath)) {
+      try {
+        const feedbackPath = `${storageBasePath}/${filePath}_feedback`;
+        const { data } = await supabase.storage
+          .from('simulation_results')
+          .download(feedbackPath);
+        if (data) {
+          const text = await data.text();
+          setFeedbackContent(text);
+        }
+      } catch (e) {
+        // Non-critical — user can still write new feedback
+      }
+    }
   };
 
   // 关闭反馈模态框
