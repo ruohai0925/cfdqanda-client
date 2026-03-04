@@ -1003,7 +1003,7 @@ export default function Dashboard({ session, language, setLanguage }) {
                         })()}
                       </small>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        {sim.status === 'completed' && sim.result_data?.file_tree && (
+                        {(sim.status === 'completed' || sim.status === 'failed') && sim.result_data?.file_tree && (
                           <button
                             className="browse-files-button"
                             onClick={() => {
