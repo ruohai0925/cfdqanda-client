@@ -63,8 +63,9 @@ const strings = {
     preRunSettings: '执行设置',
     preRunHint: '（可选）选择执行模式和 Pre-Run 验证',
     preRunSteps: 'Pre-Run 步数',
-    preRunDefault: '默认（10步）',
-    preRunSingleStep: '单步验证',
+    preRunSingleStep: '单步验证（默认）',
+    preRun10Steps: '10 步',
+    preRun100Steps: '100 步',
     pipelineMode: '执行模式',
     pipelineModeAuto: '自动模式（一步到位）',
     pipelineModeControlled: '分步模式（可暂停检查）',
@@ -152,8 +153,9 @@ const strings = {
     preRunSettings: 'Execution Settings',
     preRunHint: '(Optional) Choose execution mode and Pre-Run validation',
     preRunSteps: 'Pre-Run Steps',
-    preRunDefault: 'Default (10 steps)',
-    preRunSingleStep: 'Single step',
+    preRunSingleStep: 'Single step (default)',
+    preRun10Steps: '10 steps',
+    preRun100Steps: '100 steps',
     pipelineMode: 'Execution Mode',
     pipelineModeAuto: 'Auto (one-shot)',
     pipelineModeControlled: 'Step-by-step (pause to review)',
@@ -234,7 +236,7 @@ export default function Dashboard({ session, language, setLanguage }) {
 
   // Pre-run settings state
   const [showPreRunSettings, setShowPreRunSettings] = useState(false);
-  const [preRunEndTime, setPreRunEndTime] = useState('');  // '' = default (10), '-1' = disabled
+  const [preRunEndTime, setPreRunEndTime] = useState('1');  // '1' = single step (default), '10', '100'
   const [pipelineMode, setPipelineMode] = useState('auto');  // 'auto' or 'controlled'
   const [selectedCheckpoints, setSelectedCheckpoints] = useState(['files_review', 'pre_run_review']);
 
@@ -822,8 +824,9 @@ export default function Dashboard({ session, language, setLanguage }) {
                       onChange={(e) => setPreRunEndTime(e.target.value)}
                       style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                     >
-                      <option value="">{t.preRunDefault}</option>
                       <option value="1">{t.preRunSingleStep}</option>
+                      <option value="10">{t.preRun10Steps}</option>
+                      <option value="100">{t.preRun100Steps}</option>
                     </select>
                   </>
                 )}
