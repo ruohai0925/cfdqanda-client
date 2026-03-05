@@ -1,6 +1,24 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
+// --- Common timezone options ---
+const TIMEZONE_OPTIONS = [
+  { value: 'Asia/Shanghai', label: 'CST (UTC+8) 北京/上海' },
+  { value: 'Asia/Tokyo', label: 'JST (UTC+9) 东京' },
+  { value: 'Asia/Kolkata', label: 'IST (UTC+5:30) 印度' },
+  { value: 'Europe/London', label: 'GMT/BST (UTC+0/+1) 伦敦' },
+  { value: 'Europe/Berlin', label: 'CET/CEST (UTC+1/+2) 柏林' },
+  { value: 'America/New_York', label: 'EST/EDT (UTC-5/-4) 纽约' },
+  { value: 'America/Chicago', label: 'CST/CDT (UTC-6/-5) 芝加哥' },
+  { value: 'America/Los_Angeles', label: 'PST/PDT (UTC-8/-7) 洛杉矶' },
+];
+
+// Generate hour options 00:00 - 23:00
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => {
+  const h = String(i).padStart(2, '0');
+  return { value: `${h}:00`, label: `${h}:00` };
+});
+
 // --- Language dictionary ---
 const strings = {
   zh: {
@@ -14,14 +32,22 @@ const strings = {
     softwarePreference: '首选仿真软件',
     budgetRange: '预算区间',
     budgetOptions: {
-      negotiable: '面议',
       under500: '¥500 以下',
       '500-1000': '¥500 - ¥1,000',
       '1000-3000': '¥1,000 - ¥3,000',
       '3000-5000': '¥3,000 - ¥5,000',
       above5000: '¥5,000 以上',
     },
-    deadline: '期望完成时间',
+    meetingTimes: '第一次三方会议时间',
+    meetingTimesHint: '最多设置 3 个备选时间，方便接单者和组织者选择',
+    meetingDate: '日期',
+    meetingTimezone: '时区',
+    meetingStart: '开始',
+    meetingEnd: '结束',
+    addMeetingTime: '+ 添加备选时间',
+    removeMeetingTime: '移除',
+    meetingOption: '备选',
+    meetingEndBeforeStart: '结束时间必须晚于开始时间至少 1 小时',
     deliverables: '交付物',
     deliverableOptions: {
       simulation_files: '仿真文件（源文件 + 结果）',
@@ -47,14 +73,22 @@ const strings = {
     softwarePreference: 'Preferred Software',
     budgetRange: 'Budget Range',
     budgetOptions: {
-      negotiable: 'Negotiable',
       under500: 'Under ¥500',
       '500-1000': '¥500 - ¥1,000',
       '1000-3000': '¥1,000 - ¥3,000',
       '3000-5000': '¥3,000 - ¥5,000',
       above5000: 'Above ¥5,000',
     },
-    deadline: 'Expected Deadline',
+    meetingTimes: 'First 3-Party Meeting Time',
+    meetingTimesHint: 'Set up to 3 options for the expert and organizer to choose from',
+    meetingDate: 'Date',
+    meetingTimezone: 'Timezone',
+    meetingStart: 'Start',
+    meetingEnd: 'End',
+    addMeetingTime: '+ Add Option',
+    removeMeetingTime: 'Remove',
+    meetingOption: 'Option',
+    meetingEndBeforeStart: 'End time must be at least 1 hour after start time',
     deliverables: 'Deliverables',
     deliverableOptions: {
       simulation_files: 'Simulation files (source + results)',
@@ -71,21 +105,21 @@ const strings = {
   }
 };
 
-const SOFTWARE_OPTIONS = [
-  'OpenFOAM',
-  'FLUENT',
-  'STAR-CCM+',
-  'COMSOL',
-  'Abaqus',
-  'Other',
-];
+const SOFTWARE_OPTIONS = ['OpenFOAM', 'FLUENT', 'STAR-CCM+'];
+
+const DEFAULT_MEETING_SLOT = () => ({
+  date: '',
+  timezone: 'Asia/Shanghai',
+  startTime: '09:00',
+  endTime: '10:00',
+});
 
 export default function ExpertOrderTab({ session, language }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedSoftware, setSelectedSoftware] = useState([]);
-  const [budgetRange, setBudgetRange] = useState('negotiable');
-  const [deadline, setDeadline] = useState('');
+  const [budgetRange, setBudgetRange] = useState('under500');
+  const [meetingSlots, setMeetingSlots] = useState([DEFAULT_MEETING_SLOT()]);
   const [selectedDeliverables, setSelectedDeliverables] = useState([]);
 
   const t = strings[language];
@@ -102,6 +136,24 @@ export default function ExpertOrderTab({ session, language }) {
     );
   };
 
+  const updateMeetingSlot = (index, field, value) => {
+    setMeetingSlots((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const addMeetingSlot = () => {
+    if (meetingSlots.length < 3) {
+      setMeetingSlots((prev) => [...prev, DEFAULT_MEETING_SLOT()]);
+    }
+  };
+
+  const removeMeetingSlot = (index) => {
+    setMeetingSlots((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -112,8 +164,22 @@ export default function ExpertOrderTab({ session, language }) {
       toast.error(t.descriptionRequired);
       return;
     }
+    // Validate meeting times: end must be at least 1 hour after start
+    for (const slot of meetingSlots) {
+      if (slot.date) {
+        const startH = parseInt(slot.startTime.split(':')[0], 10);
+        const endH = parseInt(slot.endTime.split(':')[0], 10);
+        if (endH <= startH) {
+          toast.error(t.meetingEndBeforeStart);
+          return;
+        }
+      }
+    }
     toast(t.comingSoonToast, { icon: '🚧' });
   };
+
+  const fieldLabel = { display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 };
+  const subLabel = { fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 };
 
   return (
     <div className="dashboard-layout">
@@ -123,9 +189,7 @@ export default function ExpertOrderTab({ session, language }) {
         <form onSubmit={handleSubmit}>
           {/* Title */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-              {t.orderTitle}
-            </label>
+            <label style={fieldLabel}>{t.orderTitle}</label>
             <input
               type="text"
               className="inputField"
@@ -138,9 +202,7 @@ export default function ExpertOrderTab({ session, language }) {
 
           {/* Description */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-              {t.orderDescription}
-            </label>
+            <label style={fieldLabel}>{t.orderDescription}</label>
             <textarea
               className="inputField prompt-textarea"
               value={description}
@@ -153,9 +215,7 @@ export default function ExpertOrderTab({ session, language }) {
 
           {/* Software preference */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-              {t.softwarePreference}
-            </label>
+            <label style={{ ...fieldLabel, marginBottom: '6px' }}>{t.softwarePreference}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {SOFTWARE_OPTIONS.map((sw) => (
                 <button
@@ -181,9 +241,7 @@ export default function ExpertOrderTab({ session, language }) {
 
           {/* Budget range */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-              {t.budgetRange}
-            </label>
+            <label style={fieldLabel}>{t.budgetRange}</label>
             <select
               value={budgetRange}
               onChange={(e) => setBudgetRange(e.target.value)}
@@ -195,25 +253,126 @@ export default function ExpertOrderTab({ session, language }) {
             </select>
           </div>
 
-          {/* Deadline */}
+          {/* Meeting times */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-              {t.deadline}
-            </label>
-            <input
-              type="date"
-              className="inputField"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              style={{ margin: 0 }}
-            />
+            <label style={fieldLabel}>{t.meetingTimes}</label>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 10px 0' }}>
+              {t.meetingTimesHint}
+            </p>
+
+            {meetingSlots.map((slot, index) => (
+              <div
+                key={index}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px',
+                  marginBottom: '8px',
+                  background: 'var(--bg-tertiary)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent)' }}>
+                    {t.meetingOption} {index + 1}
+                  </span>
+                  {meetingSlots.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeMeetingSlot(index)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--danger)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        padding: '2px 6px',
+                      }}
+                    >
+                      {t.removeMeetingTime}
+                    </button>
+                  )}
+                </div>
+
+                {/* Date */}
+                <div style={{ marginBottom: '6px' }}>
+                  <label style={subLabel}>{t.meetingDate}</label>
+                  <input
+                    type="date"
+                    className="inputField"
+                    value={slot.date}
+                    onChange={(e) => updateMeetingSlot(index, 'date', e.target.value)}
+                    style={{ margin: 0, width: '100%' }}
+                  />
+                </div>
+
+                {/* Timezone */}
+                <div style={{ marginBottom: '6px' }}>
+                  <label style={subLabel}>{t.meetingTimezone}</label>
+                  <select
+                    value={slot.timezone}
+                    onChange={(e) => updateMeetingSlot(index, 'timezone', e.target.value)}
+                    style={{ width: '100%', padding: '6px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
+                  >
+                    {TIMEZONE_OPTIONS.map((tz) => (
+                      <option key={tz.value} value={tz.value}>{tz.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Start / End time row */}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={subLabel}>{t.meetingStart}</label>
+                    <select
+                      value={slot.startTime}
+                      onChange={(e) => updateMeetingSlot(index, 'startTime', e.target.value)}
+                      style={{ width: '100%', padding: '6px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
+                    >
+                      {HOUR_OPTIONS.map((h) => (
+                        <option key={h.value} value={h.value}>{h.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={subLabel}>{t.meetingEnd}</label>
+                    <select
+                      value={slot.endTime}
+                      onChange={(e) => updateMeetingSlot(index, 'endTime', e.target.value)}
+                      style={{ width: '100%', padding: '6px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.85rem' }}
+                    >
+                      {HOUR_OPTIONS.map((h) => (
+                        <option key={h.value} value={h.value}>{h.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {meetingSlots.length < 3 && (
+              <button
+                type="button"
+                onClick={addMeetingSlot}
+                style={{
+                  background: 'none',
+                  border: '1px dashed var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--accent)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  padding: '6px 12px',
+                  width: '100%',
+                  transition: 'all var(--transition)',
+                }}
+              >
+                {t.addMeetingTime}
+              </button>
+            )}
           </div>
 
           {/* Deliverables */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
-              {t.deliverables}
-            </label>
+            <label style={{ ...fieldLabel, marginBottom: '6px' }}>{t.deliverables}</label>
             {Object.entries(t.deliverableOptions).map(([key, label]) => (
               <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '0.85rem', cursor: 'pointer' }}>
                 <input
