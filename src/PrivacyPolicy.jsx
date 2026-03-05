@@ -80,7 +80,7 @@ const strings = {
       {
         heading: '9. 联系我们',
         content: `如果您对本隐私政策有任何疑问，或希望行使您的数据权利（包括删除账户、导出数据、撤回同意等），请通过以下方式联系我们：
-• 邮箱: apexxflowcfd@gmail.com`,
+• 邮箱: apexflowcfd@gmail.com`,
       },
     ],
   },
@@ -164,7 +164,7 @@ We do not sell or share your data with third-party advertisers.`,
       {
         heading: '9. Contact Us',
         content: `If you have any questions about this Privacy Policy or wish to exercise your data rights (including account deletion, data export, or consent withdrawal), please contact us:
-• Email: apexxflowcfd@gmail.com`,
+• Email: apexflowcfd@gmail.com`,
       },
     ],
   },
