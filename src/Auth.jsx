@@ -89,9 +89,17 @@ export default function Auth({ language, setLanguage }) {
 
   const handleLogin = async (event) => {
     event.preventDefault()
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      toast.error(t.captchaRequired);
+      return;
+    }
     try {
       setLoading(true)
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const options = {};
+      if (captchaToken) {
+        options.captchaToken = captchaToken;
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password, options })
       if (error) throw error
       toast.success(t.loginSuccess)
     } catch (error) {
@@ -195,6 +203,19 @@ export default function Auth({ language, setLanguage }) {
           <input id="email" className="inputField" type="email" placeholder={t.emailPlaceholder} value={email} required onChange={(e) => setEmail(e.target.value)} />
           <label htmlFor="password">{t.password}</label>
           <input id="password" className="inputField" type="password" placeholder={t.passwordPlaceholder} value={password} required onChange={(e) => setPassword(e.target.value)} />
+
+          {/* Cloudflare Turnstile CAPTCHA */}
+          {TURNSTILE_SITE_KEY && (
+            <div style={{ margin: '12px 0' }}>
+              <Turnstile
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken('')}
+                options={{ theme: 'dark', size: 'normal' }}
+              />
+            </div>
+          )}
+
           <button className="button-block" disabled={loading}>
             {loading ? t.loading : t.loginButton}
           </button>
