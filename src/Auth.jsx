@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import toast from 'react-hot-toast'
 import { Turnstile } from '@marsidev/react-turnstile'
@@ -84,6 +84,7 @@ export default function Auth({ language, setLanguage }) {
   const [organization, setOrganization] = useState('')
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [captchaToken, setCaptchaToken] = useState('')
+  const turnstileRef = useRef(null);
 
   const t = strings[language];
 
@@ -106,6 +107,9 @@ export default function Auth({ language, setLanguage }) {
       toast.error(error.error_description || error.message)
     } finally {
       setLoading(false)
+      // Reset Turnstile so a fresh token is generated for the next attempt
+      setCaptchaToken('');
+      turnstileRef.current?.reset();
     }
   }
 
@@ -157,6 +161,8 @@ export default function Auth({ language, setLanguage }) {
       toast.error(error.error_description || error.message)
     } finally {
       setLoading(false)
+      setCaptchaToken('');
+      turnstileRef.current?.reset();
     }
   }
 
@@ -208,9 +214,10 @@ export default function Auth({ language, setLanguage }) {
           {TURNSTILE_SITE_KEY && (
             <div style={{ margin: '12px 0' }}>
               <Turnstile
+                ref={turnstileRef}
                 siteKey={TURNSTILE_SITE_KEY}
                 onSuccess={(token) => setCaptchaToken(token)}
-                onExpire={() => setCaptchaToken('')}
+                onExpire={() => { setCaptchaToken(''); turnstileRef.current?.reset(); }}
                 options={{ theme: 'dark', size: 'normal' }}
               />
             </div>
@@ -260,9 +267,10 @@ export default function Auth({ language, setLanguage }) {
           {TURNSTILE_SITE_KEY && (
             <div style={{ margin: '12px 0' }}>
               <Turnstile
+                ref={turnstileRef}
                 siteKey={TURNSTILE_SITE_KEY}
                 onSuccess={(token) => setCaptchaToken(token)}
-                onExpire={() => setCaptchaToken('')}
+                onExpire={() => { setCaptchaToken(''); turnstileRef.current?.reset(); }}
                 options={{ theme: 'dark', size: 'normal' }}
               />
             </div>
