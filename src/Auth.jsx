@@ -168,17 +168,25 @@ export default function Auth({ language, setLanguage }) {
 
   const handleResetPassword = async (event) => {
     event.preventDefault()
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      toast.error(t.captchaRequired);
+      return;
+    }
     try {
       setLoading(true)
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}`,
-      })
+      const options = { redirectTo: `${window.location.origin}` };
+      if (captchaToken) {
+        options.captchaToken = captchaToken;
+      }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, options)
       if (error) throw error
       toast.success(t.resetEmailSent)
     } catch (error) {
       toast.error(error.error_description || error.message)
     } finally {
       setLoading(false)
+      setCaptchaToken('');
+      turnstileRef.current?.reset();
     }
   }
 
@@ -293,6 +301,20 @@ export default function Auth({ language, setLanguage }) {
         <form onSubmit={handleResetPassword}>
           <label htmlFor="reset-email">{t.email}</label>
           <input id="reset-email" className="inputField" type="email" placeholder={t.emailPlaceholder} value={email} required onChange={(e) => setEmail(e.target.value)} />
+
+          {/* Cloudflare Turnstile CAPTCHA */}
+          {TURNSTILE_SITE_KEY && (
+            <div style={{ margin: '12px 0' }}>
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onExpire={() => { setCaptchaToken(''); turnstileRef.current?.reset(); }}
+                options={{ theme: 'dark', size: 'normal' }}
+              />
+            </div>
+          )}
+
           <button className="button-block" disabled={loading}>
             {loading ? t.loading : t.resetButton}
           </button>
