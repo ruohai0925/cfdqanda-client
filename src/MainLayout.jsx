@@ -29,9 +29,29 @@ const strings = {
 export default function MainLayout({ session, language, setLanguage }) {
   const [activeTab, setActiveTab] = useState('ai');
   const [storageUsage, setStorageUsage] = useState(null);
+  const [displayName, setDisplayName] = useState(null);
 
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
+
+  // Fetch user display name from user_profiles
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('display_name')
+          .eq('id', session.user.id)
+          .single();
+        if (data?.display_name) {
+          setDisplayName(data.display_name);
+        }
+      } catch {
+        // Silent fail — fallback to email
+      }
+    }
+    fetchProfile();
+  }, [session.user.id]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -78,7 +98,7 @@ export default function MainLayout({ session, language, setLanguage }) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t.welcome}, {session.user.email}!</span>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t.welcome}, {displayName || session.user.email}!</span>
           {storageUsage && (
             <span
               className="storage-indicator"

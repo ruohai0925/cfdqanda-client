@@ -1,132 +1,279 @@
-// 导入React的useState钩子，用于管理组件状态
 import { useState } from 'react'
-// 导入Supabase客户端，用于与后端数据库和认证服务通信
 import { supabase } from './supabaseClient'
 import toast from 'react-hot-toast'
+import { Turnstile } from '@marsidev/react-turnstile'
 
-// --- 语言字典 ---
+// --- Language dictionary ---
 const strings = {
   zh: {
     title: '计算流体力学问答',
-    description: '请使用您的邮箱进行登录或注册。',
+    descriptionLogin: '请使用您的邮箱进行登录。',
+    descriptionSignup: '创建新账户。',
+    descriptionReset: '输入您的邮箱，我们将发送密码重置链接。',
     email: '邮箱',
     emailPlaceholder: '请输入您的邮箱',
     password: '密码',
     passwordPlaceholder: '请输入您的密码',
+    displayName: '用户名',
+    displayNamePlaceholder: '请输入您的用户名',
+    organization: '机构',
+    organizationPlaceholder: '请输入您的机构名称',
     loginButton: '登录',
     signupButton: '注册',
+    resetButton: '发送重置邮件',
     loading: '加载中...',
     loginSuccess: '登录成功！',
     signupSuccess: '注册成功！请检查您的邮箱进行验证。',
+    resetEmailSent: '重置邮件已发送，请检查收件箱。',
+    forgotPassword: '忘记密码？',
+    backToLogin: '返回登录',
+    noAccount: '没有账号？',
+    hasAccount: '已有账号？',
+    switchToSignup: '注册',
+    switchToLogin: '登录',
+    privacyAccept: '我已阅读并同意',
+    privacyLink: '隐私政策',
+    privacyRequired: '请先同意隐私政策。',
+    displayNameRequired: '请输入用户名。',
+    captchaRequired: '请完成人机验证。',
   },
   en: {
     title: 'CFDQandA',
-    description: 'Please use your email to login or sign up.',
+    descriptionLogin: 'Please log in with your email.',
+    descriptionSignup: 'Create a new account.',
+    descriptionReset: 'Enter your email and we will send a password reset link.',
     email: 'Email',
     emailPlaceholder: 'Enter your email',
     password: 'Password',
     passwordPlaceholder: 'Enter your password',
+    displayName: 'Display Name',
+    displayNamePlaceholder: 'Enter your display name',
+    organization: 'Organization',
+    organizationPlaceholder: 'Enter your organization',
     loginButton: 'Login',
     signupButton: 'Sign Up',
+    resetButton: 'Send Reset Email',
     loading: 'Loading...',
     loginSuccess: 'Login successful!',
     signupSuccess: 'Sign up successful! Please check your email for verification.',
+    resetEmailSent: 'Reset email sent. Please check your inbox.',
+    forgotPassword: 'Forgot password?',
+    backToLogin: 'Back to Login',
+    noAccount: "Don't have an account?",
+    hasAccount: 'Already have an account?',
+    switchToSignup: 'Sign Up',
+    switchToLogin: 'Login',
+    privacyAccept: 'I have read and agree to the',
+    privacyLink: 'Privacy Policy',
+    privacyRequired: 'Please accept the Privacy Policy.',
+    displayNameRequired: 'Please enter a display name.',
+    captchaRequired: 'Please complete the CAPTCHA verification.',
   }
 };
 
-// 定义认证组件，这是用户登录和注册的主要界面
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
 export default function Auth({ language, setLanguage }) {
-  // 创建loading状态，用于显示加载状态（防止重复提交）
   const [loading, setLoading] = useState(false)
-  // 创建email状态，用于存储用户输入的邮箱地址
   const [email, setEmail] = useState('')
-  // 创建password状态，用于存储用户输入的密码
   const [password, setPassword] = useState('')
-  
-  // 获取当前语言的翻译文本
+  const [formMode, setFormMode] = useState('login') // 'login' | 'signup' | 'reset'
+
+  // Signup-only fields
+  const [displayName, setDisplayName] = useState('')
+  const [organization, setOrganization] = useState('')
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+
   const t = strings[language];
 
-  // 处理用户登录的函数
   const handleLogin = async (event) => {
-    event.preventDefault() // 阻止表单默认的提交行为，防止页面刷新
-
+    event.preventDefault()
     try {
-      setLoading(true) // 开始加载状态，禁用按钮防止重复点击
-      // 调用Supabase的登录方法，使用邮箱和密码进行身份验证
+      setLoading(true)
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error // 如果有错误，抛出异常
-      toast.success(t.loginSuccess) // 登录成功提示
+      if (error) throw error
+      toast.success(t.loginSuccess)
     } catch (error) {
-      // 捕获错误并显示给用户，优先显示详细错误描述
       toast.error(error.error_description || error.message)
     } finally {
-      setLoading(false) // 无论成功还是失败，都要结束加载状态
+      setLoading(false)
     }
   }
 
-  // 处理用户注册的函数
   const handleSignUp = async (event) => {
-    event.preventDefault() // 阻止表单默认提交行为
+    event.preventDefault()
+
+    if (!displayName.trim()) {
+      toast.error(t.displayNameRequired);
+      return;
+    }
+    if (!privacyAccepted) {
+      toast.error(t.privacyRequired);
+      return;
+    }
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      toast.error(t.captchaRequired);
+      return;
+    }
 
     try {
-      setLoading(true) // 开始加载状态
-      // 调用Supabase的注册方法，创建新用户账户
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) throw error // 如果有错误，抛出异常
-      // 注册成功后提示用户检查邮箱（如果开启了邮箱验证功能）
+      setLoading(true)
+      const signUpOptions = {};
+      if (captchaToken) {
+        signUpOptions.captchaToken = captchaToken;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: signUpOptions,
+      })
+      if (error) throw error
+
+      // Write profile to user_profiles table
+      if (data.user) {
+        const { error: profileError } = await supabase.from('user_profiles').insert({
+          id: data.user.id,
+          display_name: displayName.trim(),
+          organization: organization.trim() || null,
+          privacy_accepted_at: new Date().toISOString(),
+        });
+        if (profileError) {
+          console.error('Failed to create profile:', profileError);
+        }
+      }
+
       toast.success(t.signupSuccess)
     } catch (error) {
-      // 捕获并显示注册过程中的错误
       toast.error(error.error_description || error.message)
     } finally {
-      setLoading(false) // 结束加载状态
+      setLoading(false)
     }
   }
 
-  // 返回组件的JSX结构，渲染登录和注册界面
+  const handleResetPassword = async (event) => {
+    event.preventDefault()
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}`,
+      })
+      if (error) throw error
+      toast.success(t.resetEmailSent)
+    } catch (error) {
+      toast.error(error.error_description || error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const switchMode = (mode) => {
+    setFormMode(mode);
+    setCaptchaToken('');
+  };
+
+  const description = formMode === 'signup' ? t.descriptionSignup
+    : formMode === 'reset' ? t.descriptionReset
+    : t.descriptionLogin;
+
   return (
     <div aria-live="polite">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h1 className="header">{t.title}</h1>
-          <div>
-            <button onClick={() => setLanguage('en')} disabled={language==='en'} style={{ marginRight: '5px', padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='en' ? 'var(--accent)' : 'transparent', color: language==='en' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>EN</button>
-            <button onClick={() => setLanguage('zh')} disabled={language==='zh'} style={{ padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='zh' ? 'var(--accent)' : 'transparent', color: language==='zh' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>ZH</button>
-          </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h1 className="header">{t.title}</h1>
+        <div>
+          <button onClick={() => setLanguage('en')} disabled={language==='en'} style={{ marginRight: '5px', padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='en' ? 'var(--accent)' : 'transparent', color: language==='en' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>EN</button>
+          <button onClick={() => setLanguage('zh')} disabled={language==='zh'} style={{ padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='zh' ? 'var(--accent)' : 'transparent', color: language==='zh' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>ZH</button>
         </div>
-        <p className="description">{t.description}</p>
-        {/* 表单容器，提交时触发登录函数 */}
+      </div>
+      <p className="description">{description}</p>
+
+      {/* === Login Form === */}
+      {formMode === 'login' && (
         <form onSubmit={handleLogin}>
-          {/* 邮箱输入标签 */}
           <label htmlFor="email">{t.email}</label>
-          <input
-            id="email"
-            className="inputField"
-            type="email"
-            placeholder={t.emailPlaceholder}
-            value={email}
-            required={true}
-            onChange={(e) => setEmail(e.target.value)} // 当用户输入时更新email状态
-          />
-          {/* 密码输入标签 */}
+          <input id="email" className="inputField" type="email" placeholder={t.emailPlaceholder} value={email} required onChange={(e) => setEmail(e.target.value)} />
           <label htmlFor="password">{t.password}</label>
-          <input
-            id="password"
-            className="inputField"
-            type="password"
-            placeholder={t.passwordPlaceholder}
-            value={password}
-            required={true}
-            onChange={(e) => setPassword(e.target.value)} // 当用户输入时更新password状态
-          />
-          {/* 登录按钮，加载时禁用并显示加载状态 */}
-          <button className={'button-block'} disabled={loading}>
-            {loading ? <span>{t.loading}</span> : <span>{t.loginButton}</span>}
+          <input id="password" className="inputField" type="password" placeholder={t.passwordPlaceholder} value={password} required onChange={(e) => setPassword(e.target.value)} />
+          <button className="button-block" disabled={loading}>
+            {loading ? t.loading : t.loginButton}
           </button>
-          {/* 注册按钮，点击时触发注册函数，加载时禁用 */}
-          <button className={'button-block button-outline'} type="button" disabled={loading} onClick={handleSignUp}>
-            {loading ? <span>{t.loading}</span> : <span>{t.signupButton}</span>}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', fontSize: '0.85rem' }}>
+            <button type="button" onClick={() => switchMode('reset')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, fontSize: '0.85rem' }}>
+              {t.forgotPassword}
+            </button>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {t.noAccount}{' '}
+              <button type="button" onClick={() => switchMode('signup')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, fontSize: '0.85rem', fontWeight: 600 }}>
+                {t.switchToSignup}
+              </button>
+            </span>
+          </div>
         </form>
+      )}
+
+      {/* === Signup Form === */}
+      {formMode === 'signup' && (
+        <form onSubmit={handleSignUp}>
+          <label htmlFor="signup-email">{t.email}</label>
+          <input id="signup-email" className="inputField" type="email" placeholder={t.emailPlaceholder} value={email} required onChange={(e) => setEmail(e.target.value)} />
+          <label htmlFor="signup-password">{t.password}</label>
+          <input id="signup-password" className="inputField" type="password" placeholder={t.passwordPlaceholder} value={password} required onChange={(e) => setPassword(e.target.value)} />
+          <label htmlFor="display-name">{t.displayName}</label>
+          <input id="display-name" className="inputField" type="text" placeholder={t.displayNamePlaceholder} value={displayName} required onChange={(e) => setDisplayName(e.target.value)} />
+          <label htmlFor="organization">{t.organization}</label>
+          <input id="organization" className="inputField" type="text" placeholder={t.organizationPlaceholder} value={organization} onChange={(e) => setOrganization(e.target.value)} />
+
+          {/* Privacy policy checkbox */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '14px 0 6px', fontSize: '0.85rem', cursor: 'pointer' }}>
+            <input type="checkbox" checked={privacyAccepted} onChange={(e) => setPrivacyAccepted(e.target.checked)} />
+            <span>
+              {t.privacyAccept}{' '}
+              <a href="#privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+                {t.privacyLink}
+              </a>
+            </span>
+          </label>
+
+          {/* Cloudflare Turnstile CAPTCHA */}
+          {TURNSTILE_SITE_KEY && (
+            <div style={{ margin: '12px 0' }}>
+              <Turnstile
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setCaptchaToken(token)}
+                onExpire={() => setCaptchaToken('')}
+                options={{ theme: 'dark', size: 'normal' }}
+              />
+            </div>
+          )}
+
+          <button className="button-block" disabled={loading || !privacyAccepted}>
+            {loading ? t.loading : t.signupButton}
+          </button>
+          <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            {t.hasAccount}{' '}
+            <button type="button" onClick={() => switchMode('login')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, fontSize: '0.85rem', fontWeight: 600 }}>
+              {t.switchToLogin}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* === Password Reset Form === */}
+      {formMode === 'reset' && (
+        <form onSubmit={handleResetPassword}>
+          <label htmlFor="reset-email">{t.email}</label>
+          <input id="reset-email" className="inputField" type="email" placeholder={t.emailPlaceholder} value={email} required onChange={(e) => setEmail(e.target.value)} />
+          <button className="button-block" disabled={loading}>
+            {loading ? t.loading : t.resetButton}
+          </button>
+          <div style={{ textAlign: 'center', marginTop: '12px' }}>
+            <button type="button" onClick={() => switchMode('login')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, fontSize: '0.85rem' }}>
+              {t.backToLogin}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }
