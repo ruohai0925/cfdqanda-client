@@ -959,7 +959,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         })()}
                       </small>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        {(sim.status === 'completed' || sim.status === 'failed') && sim.result_data?.file_tree && (
+                        {(sim.status === 'completed' || sim.status === 'failed' || sim.status === 'cancelled') && sim.result_data?.file_tree && (
                           <button
                             className="browse-files-button"
                             onClick={() => {
@@ -970,7 +970,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                             {t.browseFilesButton}
                           </button>
                         )}
-                        {sim.status === 'completed' && sim.result_data?.zip_storage_path && (
+                        {(sim.status === 'completed' || sim.status === 'cancelled') && sim.result_data?.zip_storage_path && (
                           <button
                             className="download-link"
                             onClick={() => handleDownloadZip(sim)}
