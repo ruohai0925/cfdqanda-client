@@ -62,7 +62,7 @@ const strings = {
         heading: '7. 您的权利',
         content: `您对您的数据拥有以下权利：
 • 访问权：您可以随时在平台上查看您提交的所有任务和结果
-• 删除权：您可以删除单个任务，也可以通过联系我们删除账户来清除所有关联数据
+• 删除权：您可以删除单个任务，也可以在设置中自助删除账户以清除所有关联数据
 • 导出权：您可以下载您的仿真结果文件（ZIP 格式），或通过文件浏览器查看和下载单个文件
 • 更正权：如需修改用户名、机构等账户信息，请联系我们
 • 撤回同意权：您可以随时联系我们撤回对本隐私政策的同意，届时您的账户将被停用`,
@@ -146,7 +146,7 @@ We do not sell or share your data with third-party advertisers.`,
         heading: '7. Your Rights',
         content: `You have the following rights regarding your data:
 • Right of access: you can view all your submitted tasks and results on the platform at any time
-• Right to erasure: you can delete individual tasks, or contact us to delete your account and remove all associated data
+• Right to erasure: you can delete individual tasks, or use the "Delete Account" button to permanently remove your account and all associated data
 • Right to data portability: you can download your simulation result files (ZIP format), or browse and download individual files through the file browser
 • Right to rectification: contact us to modify your display name, organization, or other account information
 • Right to withdraw consent: you may contact us at any time to withdraw your consent to this Privacy Policy, at which point your account will be deactivated`,
