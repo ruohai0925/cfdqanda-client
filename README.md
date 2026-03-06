@@ -1,8 +1,8 @@
 # cfdqanda-client
 
-License: PolyForm Strict 1.0.0 — source available for personal and non-commercial use only.
+> **License:** [PolyForm Strict 1.0.0](https://polyformproject.org/licenses/strict/1.0.0/) — source available for personal and non-commercial use only.
 
-React frontend for CFDQandA (https://cfdqanda.com) — a natural-language-driven CFD simulation platform.
+React frontend for [CFDQandA](https://cfdqanda.com) — a natural-language-driven CFD simulation platform.
 
 ## Tech Stack
 
@@ -15,13 +15,17 @@ React frontend for CFDQandA (https://cfdqanda.com) — a natural-language-driven
 
 ```
 src/
-├── App.jsx              # Root — auth session management, language state
-├── Auth.jsx             # Email/password login & signup via Supabase Auth
-├── Dashboard.jsx        # Main UI — task submission, simulation history, checkpoints
+├── App.jsx              # Root — auth session management, language state, privacy policy
+├── Auth.jsx             # Email/password login & signup with Cloudflare Turnstile CAPTCHA
+├── MainLayout.jsx       # Shared header — user profile, storage usage, language toggle, account management
+├── AISimulationTab.jsx  # AI simulation — task submission, history, checkpoints, file browsing
+├── ExpertOrderTab.jsx   # Expert order system — consultation request form
+├── PrivacyPolicy.jsx    # Bilingual privacy policy (GDPR-compliant)
 ├── supabaseClient.js    # Supabase client initialization
+├── main.jsx             # App entry point
 ├── index.css            # Global styles — dark engineer theme
 ├── components/
-│   └── FileBrowser.jsx  # Draggable modal — file tree, preview, feedback, ratings
+│   └── FileBrowser.jsx  # Draggable modal — file tree, preview, download, feedback, ratings
 ├── utils/
 │   └── fileUtils.js     # formatFileSize() helper
 └── data/
@@ -30,17 +34,23 @@ src/
 
 ## Features
 
-- **Task Submission**: Natural language CFD simulation requests with example prompts
+- **Task Submission**: Natural language CFD simulation requests with example prompts and solver selection (OpenFOAM v10, AMReX coming soon)
 - **BYOK**: Bring Your Own Key — choose LLM provider (OpenAI, Anthropic, Codex) and provide API key
-- **Real-time Status**: Live updates via Supabase Realtime (queued → running → completed/failed)
-- **File Browser**: Browse simulation output files, preview text content, download individual files or ZIP
+- **Two Execution Modes**: Auto mode (one-shot) and Controlled mode (stage-by-stage with checkpoints)
+- **Real-time Status**: Live updates via Supabase Realtime (queued → running → checkpoint → completed/failed/cancelled)
+- **File Browser**: Browse simulation output files, preview text content, download individual files or full ZIP archive
 - **Checkpoint Review**: Controlled pipeline mode with review panels at each stage (plan, files, pre-run)
-- **Stage Feedback**: Optional comments at each checkpoint, accumulated and preserved
+- **Stage Feedback & Ratings**: Per-stage comments and ratings (1-3) at each checkpoint
 - **Per-file Feedback**: Rate individual output files with comments
 - **Task Rating**: Overall task rating (success/partial/failed) with comments
-- **Data Lifecycle**: Expiry badges showing days until auto-deletion, storage usage per task
+- **Task Cancellation**: Cancel queued, running, or checkpoint tasks
+- **Data Lifecycle**: Expiry badges showing days until auto-deletion, per-task and total cloud storage usage display
+- **User Accounts**: Email/password registration with Cloudflare Turnstile CAPTCHA, password recovery, auto-created user profiles
+- **Account Deletion**: Self-service account deletion with email confirmation (GDPR compliance, UI temporarily hidden)
+- **Expert Orders**: Consultation request tab with meeting scheduler
+- **Privacy Policy**: Bilingual (zh/en) privacy policy with GDPR rights
 - **Dark Theme**: Custom dark engineer theme with dot-grid background
-- **Bilingual**: Chinese/English UI toggle
+- **Bilingual UI**: Chinese/English toggle affecting all text
 
 ## Environment Variables
 
@@ -69,4 +79,4 @@ npm run lint     # ESLint check
 
 ## Deployment
 
-Static SPA deployed to Vercel. The `dist/` directory contains the production build.
+Static SPA deployed to Vercel from the `development` branch. Auto-deploys on push.

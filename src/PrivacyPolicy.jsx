@@ -11,7 +11,7 @@ const strings = {
 • 账户信息：注册时提供的电子邮箱地址、加密后的密码、用户名和机构名称
 • 仿真任务数据：您提交的仿真需求描述（prompt）、选择的求解器和 LLM 配置、生成的配置文件和仿真结果
 • 使用数据：任务提交时间、任务状态变更、LLM token 使用量
-• 可选数据：您主动提供的任务评价和文件反馈
+• 可选数据：您主动提供的任务评价（整体评价和阶段评价）、文件反馈、专家咨询需求
 • 如您选择"使用自己的 API Key"，该 Key 仅用于当前任务，Worker 读取后立即从数据库中删除
 • 隐私政策同意时间戳：记录您同意本政策的时间`,
       },
@@ -28,7 +28,7 @@ const strings = {
 
 • Supabase（美国）：数据库、用户认证、文件存储。存储您的账户信息、仿真任务和结果文件
 • Vercel（全球 CDN）：托管前端静态资源。不存储用户数据
-• Cloudflare（全球）：DNS 解析、安全隧道、Turnstile 人机验证。处理注册时的 CAPTCHA 验证
+• Cloudflare（全球）：DNS 解析、安全隧道、Turnstile 人机验证。处理注册和登录时的 CAPTCHA 验证
 • OpenAI / Anthropic（美国）：LLM API。仅接收仿真需求描述（prompt）用于生成配置文件，不存储您的个人身份信息
 
 我们不使用 Google Analytics、Facebook Pixel 或任何其他广告/追踪服务。`,
@@ -54,7 +54,7 @@ const strings = {
         heading: '6. 数据保留期限',
         content: `• 失败/取消的仿真任务：自创建之日起保留 7 天，之后自动软删除
 • 已完成的仿真任务：自创建之日起保留 14 天，之后自动软删除
-• 已软删除的任务：3 天后自动硬删除（清理存储文件和数据库记录）
+• 已软删除的任务：3 天后自动硬删除（清理云端存储文件、本地运行目录和数据库记录）
 • 账户信息和用户资料：在您主动删除账户前一直保留
 • 服务器日志：保留 30 天后自动清除`,
       },
@@ -62,8 +62,8 @@ const strings = {
         heading: '7. 您的权利',
         content: `您对您的数据拥有以下权利：
 • 访问权：您可以随时在平台上查看您提交的所有任务和结果
-• 删除权：您可以删除单个任务，也可以在设置中自助删除账户以清除所有关联数据
-• 导出权：您可以下载您的仿真结果文件（ZIP 格式），或通过文件浏览器查看和下载单个文件
+• 删除权：您可以删除单个任务；账户删除功能已实现（后端 API 就绪），开启后可自助永久删除账户及所有关联数据，或联系我们协助删除
+• 导出权：您可以下载您的仿真结果文件（ZIP 格式），或通过文件浏览器查看和下载单个文件。所有状态的任务（已完成、失败、取消）均可下载
 • 更正权：如需修改用户名、机构等账户信息，请联系我们
 • 撤回同意权：您可以随时联系我们撤回对本隐私政策的同意，届时您的账户将被停用`,
       },
@@ -74,8 +74,10 @@ const strings = {
 • 密码经过哈希处理，我们无法读取您的明文密码
 • API Key 仅在内存中短暂存在，Worker 读取后立即从数据库中删除
 • 数据库访问通过 Row Level Security (RLS) 策略限制，用户只能访问自己的数据
-• 注册时使用 Cloudflare Turnstile 人机验证，防止自动化攻击
-• API 端点启用速率限制，防止滥用`,
+• 注册和登录时使用 Cloudflare Turnstile 人机验证，防止自动化攻击
+• API 端点启用速率限制，防止滥用
+• 仿真脚本执行前经过安全审计（Allrun 白名单验证）
+• 任务领取使用数据库级原子锁（FOR UPDATE SKIP LOCKED），防止并发冲突`,
       },
       {
         heading: '9. 联系我们',
@@ -95,7 +97,7 @@ const strings = {
 • Account information: email address, encrypted password, display name, and organization provided during registration
 • Simulation task data: your simulation requirement descriptions (prompts), solver and LLM configuration choices, generated configuration files, and simulation results
 • Usage data: task submission times, task status changes, LLM token usage
-• Optional data: task ratings and file feedback you voluntarily provide
+• Optional data: task ratings (overall and per-stage), file feedback, and expert consultation requests you voluntarily provide
 • If you choose "Bring Your Own Key", the API key is used only for the current task and deleted from the database immediately after the Worker reads it
 • Privacy policy consent timestamp: records when you agreed to this policy`,
       },
@@ -112,7 +114,7 @@ We do not use any third-party tracking cookies, advertising SDKs, or user behavi
 
 • Supabase (US): Database, user authentication, file storage. Stores your account information, simulation tasks, and result files
 • Vercel (Global CDN): Hosts frontend static assets. Does not store user data
-• Cloudflare (Global): DNS resolution, security tunnel, Turnstile CAPTCHA verification. Processes CAPTCHA verification during registration
+• Cloudflare (Global): DNS resolution, security tunnel, Turnstile CAPTCHA verification. Processes CAPTCHA verification during registration and login
 • OpenAI / Anthropic (US): LLM APIs. Only receives simulation requirement descriptions (prompts) for generating configuration files; does not store your personal identity information
 
 We do not use Google Analytics, Facebook Pixel, or any other advertising/tracking services.`,
@@ -138,7 +140,7 @@ We do not sell or share your data with third-party advertisers.`,
         heading: '6. Data Retention',
         content: `• Failed/cancelled simulation tasks: retained for 7 days from creation, then automatically soft-deleted
 • Completed simulation tasks: retained for 14 days from creation, then automatically soft-deleted
-• Soft-deleted tasks: permanently deleted after 3 days (storage files and database records are cleaned up)
+• Soft-deleted tasks: permanently deleted after 3 days (cloud storage files, local run directories, and database records are cleaned up)
 • Account information and user profiles: retained until you actively delete your account
 • Server logs: retained for 30 days, then automatically purged`,
       },
@@ -146,8 +148,8 @@ We do not sell or share your data with third-party advertisers.`,
         heading: '7. Your Rights',
         content: `You have the following rights regarding your data:
 • Right of access: you can view all your submitted tasks and results on the platform at any time
-• Right to erasure: you can delete individual tasks, or use the "Delete Account" button to permanently remove your account and all associated data
-• Right to data portability: you can download your simulation result files (ZIP format), or browse and download individual files through the file browser
+• Right to erasure: you can delete individual tasks; the account deletion feature is implemented (backend API ready) and once enabled, you can permanently remove your account and all associated data, or contact us for assistance
+• Right to data portability: you can download your simulation result files (ZIP format) for all task statuses (completed, failed, cancelled), or browse and download individual files through the file browser
 • Right to rectification: contact us to modify your display name, organization, or other account information
 • Right to withdraw consent: you may contact us at any time to withdraw your consent to this Privacy Policy, at which point your account will be deactivated`,
       },
@@ -158,8 +160,10 @@ We do not sell or share your data with third-party advertisers.`,
 • Passwords are hashed; we cannot read your plaintext password
 • API keys exist only briefly in memory and are immediately deleted from the database after the Worker reads them
 • Database access is restricted through Row Level Security (RLS) policies, ensuring users can only access their own data
-• Cloudflare Turnstile CAPTCHA verification is used during registration to prevent automated attacks
-• API endpoints are rate-limited to prevent abuse`,
+• Cloudflare Turnstile CAPTCHA verification is used during registration and login to prevent automated attacks
+• API endpoints are rate-limited to prevent abuse
+• Simulation scripts undergo security auditing before execution (Allrun whitelist validation)
+• Task claiming uses database-level atomic locks (FOR UPDATE SKIP LOCKED) to prevent concurrency conflicts`,
       },
       {
         heading: '9. Contact Us',
