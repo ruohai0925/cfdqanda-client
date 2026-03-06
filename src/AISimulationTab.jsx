@@ -970,7 +970,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                             {t.browseFilesButton}
                           </button>
                         )}
-                        {(sim.status === 'completed' || sim.status === 'cancelled') && sim.result_data?.zip_storage_path && (
+                        {sim.result_data?.zip_storage_path && (
                           <button
                             className="download-link"
                             onClick={() => handleDownloadZip(sim)}
