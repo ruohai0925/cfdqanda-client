@@ -461,7 +461,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       setLoading(true);
       const { data, error, status } = await supabase
         .from('simulations')
-        .select('id, created_at, prompt, status, result_data, deleted_at, user_rating, pipeline_mode, pipeline_stage, pipeline_state')
+        .select('id, created_at, prompt, status, result_data, deleted_at, user_rating, user_comment, stage_ratings, pipeline_mode, pipeline_stage, pipeline_state')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
@@ -1057,6 +1057,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
           apiUrl={API_URL}
           userRating={selectedSimulation.user_rating}
           userComment={selectedSimulation.user_comment}
+          stageRatings={selectedSimulation.stage_ratings}
+          pipelineStage={selectedSimulation.pipeline_stage || (selectedSimulation.status === 'completed' ? 'completed' : null)}
+          pipelineMode={selectedSimulation.pipeline_mode}
           onClose={() => {
             setShowFileBrowser(false);
             setSelectedSimulation(null);

@@ -75,7 +75,7 @@ const fileBrowserStrings = {
   }
 };
 
-export default function FileBrowser({ jobId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl, userRating, userComment }) {
+export default function FileBrowser({ jobId, accessToken, fileTree, storageBasePath, language, onClose, apiUrl, userRating, userComment, stageRatings, pipelineStage, pipelineMode }) {
   const [expandedDirs, setExpandedDirs] = useState(new Set(['output'])); // 默认展开output目录
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
@@ -87,10 +87,16 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
   const [savedFeedbackFiles, setSavedFeedbackFiles] = useState(new Set());
 
   // Rating panel state (always visible, initialized from props)
-  const [selectedRating, setSelectedRating] = useState(userRating || null);
-  const [ratingComment, setRatingComment] = useState(userComment || '');
+  // For controlled pipeline: read from stage_ratings[pipelineStage]
+  // For auto mode: read from legacy user_rating/user_comment
+  const currentStageRating = (pipelineMode === 'controlled' && pipelineStage && stageRatings)
+    ? stageRatings[pipelineStage] : null;
+  const initRating = currentStageRating ? currentStageRating.rating : (pipelineMode !== 'controlled' ? userRating : null);
+  const initComment = currentStageRating ? (currentStageRating.comment || '') : (pipelineMode !== 'controlled' ? (userComment || '') : '');
+  const [selectedRating, setSelectedRating] = useState(initRating || null);
+  const [ratingComment, setRatingComment] = useState(initComment);
   const [submittingRating, setSubmittingRating] = useState(false);
-  const [ratingSaved, setRatingSaved] = useState(!!userRating);
+  const [ratingSaved, setRatingSaved] = useState(!!initRating);
   
   // 拖拽状态
   const [fileBrowserPosition, setFileBrowserPosition] = useState({ x: 0, y: 0 });
@@ -442,6 +448,10 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
       const body = { rating: selectedRating };
       if (ratingComment.trim()) {
         body.comment = ratingComment.trim();
+      }
+      // For controlled pipeline, include stage so ratings are stored per-stage
+      if (pipelineMode === 'controlled' && pipelineStage) {
+        body.stage = pipelineStage;
       }
 
       const response = await fetch(`${apiUrl}/api/v1/simulations/${jobId}/rating`, {
