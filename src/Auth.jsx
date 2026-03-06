@@ -131,7 +131,14 @@ export default function Auth({ language, setLanguage }) {
 
     try {
       setLoading(true)
-      const signUpOptions = {};
+      const signUpOptions = {
+        // Store display_name/organization in user_metadata so it survives
+        // email verification. Profile row is created on first login (MainLayout).
+        data: {
+          display_name: displayName.trim(),
+          organization: organization.trim() || null,
+        },
+      };
       if (captchaToken) {
         signUpOptions.captchaToken = captchaToken;
       }
@@ -142,19 +149,6 @@ export default function Auth({ language, setLanguage }) {
         options: signUpOptions,
       })
       if (error) throw error
-
-      // Write profile to user_profiles table
-      if (data.user) {
-        const { error: profileError } = await supabase.from('user_profiles').insert({
-          id: data.user.id,
-          display_name: displayName.trim(),
-          organization: organization.trim() || null,
-          privacy_accepted_at: new Date().toISOString(),
-        });
-        if (profileError) {
-          console.error('Failed to create profile:', profileError);
-        }
-      }
 
       toast.success(t.signupSuccess)
     } catch (error) {

@@ -56,9 +56,9 @@ export default function MainLayout({ session, language, setLanguage }) {
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
 
-  // Fetch user display name from user_profiles
+  // Fetch user display name from user_profiles; create profile if missing
   useEffect(() => {
-    async function fetchProfile() {
+    async function fetchOrCreateProfile() {
       try {
         const { data } = await supabase
           .from('user_profiles')
@@ -67,12 +67,45 @@ export default function MainLayout({ session, language, setLanguage }) {
           .single();
         if (data?.display_name) {
           setDisplayName(data.display_name);
+          return;
         }
       } catch {
-        // Silent fail — fallback to email
+        // Profile doesn't exist — create from user_metadata (set during signup)
+      }
+
+      // Auto-create profile on first login
+      const meta = session.user.user_metadata || {};
+      const name = meta.display_name || session.user.email.split('@')[0];
+      const profileData = {
+        id: session.user.id,
+        display_name: name,
+        organization: meta.organization || null,
+        privacy_accepted_at: new Date().toISOString(),
+      };
+
+      // Try frontend insert first (works if RLS allows INSERT for auth.uid() = id)
+      const { error } = await supabase.from('user_profiles').insert(profileData);
+      if (!error) {
+        setDisplayName(name);
+        return;
+      }
+
+      // Fallback: create via API server (uses service_role, bypasses RLS)
+      try {
+        const resp = await fetch(`${API_URL}/api/v1/users/me/profile`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ display_name: name, organization: meta.organization || null }),
+        });
+        if (resp.ok) setDisplayName(name);
+      } catch {
+        // Silent fail — display email as fallback
       }
     }
-    fetchProfile();
+    fetchOrCreateProfile();
   }, [session.user.id]);
 
   const handleSignOut = async () => {
