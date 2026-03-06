@@ -197,6 +197,7 @@ export default function MainLayout({ session, language, setLanguage }) {
           <button className="button-block button-outline" style={{ width: 'auto', margin: 0 }} onClick={handleSignOut}>
             {t.signOut}
           </button>
+          {/* Delete Account button — hidden for now (re-enable when needed)
           <button
             className="button-block"
             style={{ width: 'auto', margin: 0, background: 'var(--danger)', fontSize: '0.8rem', padding: '6px 12px' }}
@@ -204,6 +205,7 @@ export default function MainLayout({ session, language, setLanguage }) {
           >
             {t.deleteAccount}
           </button>
+          */}
         </div>
       </div>
 
