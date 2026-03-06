@@ -89,7 +89,6 @@ const strings = {
     checkpointConfirmedToast: '已确认，完整仿真即将开始',
     checkpointRejectedToast: '已放弃，任务标记为失败',
     checkpointActionFailedToast: '操作失败',
-    checkpointFeedbackPlaceholder: '可选：留下反馈或修改建议...',
     browsePreRunButton: '查看 Pre-Run 结果',
     browseFilesReviewButton: '查看生成文件',
     browseFilesButton: '浏览文件',
@@ -179,7 +178,6 @@ const strings = {
     checkpointConfirmedToast: 'Confirmed. Full simulation will start shortly.',
     checkpointRejectedToast: 'Rejected. Task marked as failed.',
     checkpointActionFailedToast: 'Action failed',
-    checkpointFeedbackPlaceholder: 'Optional: leave feedback or suggestions...',
     browsePreRunButton: 'View Pre-Run Results',
     browseFilesReviewButton: 'View Generated Files',
     browseFilesButton: 'Browse Files',
@@ -264,8 +262,6 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
   // Checkpoint action state (track which jobs are being confirmed/rejected)
   const [checkpointActionJobs, setCheckpointActionJobs] = useState(new Set());
-  // Per-checkpoint user comments (jobId -> string)
-  const [checkpointComments, setCheckpointComments] = useState({});
 
   const [cancellingJobs, setCancellingJobs] = useState(new Set());
 
@@ -391,7 +387,6 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   // Checkpoint confirm
   const handleCheckpointConfirm = async (sim) => {
     const jobId = sim.id;
-    const comment = checkpointComments[jobId] || '';
     setCheckpointActionJobs((prev) => new Set(prev).add(jobId));
     try {
       const response = await fetch(`${API_URL}/api/v1/simulations/${jobId}/stage/confirm`, {
@@ -400,13 +395,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ comment }),
+        body: JSON.stringify({}),
       });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Confirm failed');
       }
-      setCheckpointComments((prev) => { const next = { ...prev }; delete next[jobId]; return next; });
       toast.success(t.checkpointConfirmedToast);
     } catch (err) {
       toast.error(`${t.checkpointActionFailedToast}: ${err.message}`);
@@ -422,7 +416,6 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   // Checkpoint reject
   const handleCheckpointReject = async (sim) => {
     const jobId = sim.id;
-    const comment = checkpointComments[jobId] || '';
     setCheckpointActionJobs((prev) => new Set(prev).add(jobId));
     try {
       const response = await fetch(`${API_URL}/api/v1/simulations/${jobId}/stage/reject`, {
@@ -431,13 +424,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ comment }),
+        body: JSON.stringify({}),
       });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Reject failed');
       }
-      setCheckpointComments((prev) => { const next = { ...prev }; delete next[jobId]; return next; });
       toast.success(t.checkpointRejectedToast);
     } catch (err) {
       toast.error(`${t.checkpointActionFailedToast}: ${err.message}`);
@@ -1014,13 +1006,6 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                             </div>
                           </div>
                         )}
-                        <textarea
-                          className="checkpoint-feedback-input"
-                          placeholder={t.checkpointFeedbackPlaceholder}
-                          value={checkpointComments[sim.id] || ''}
-                          onChange={(e) => setCheckpointComments((prev) => ({ ...prev, [sim.id]: e.target.value }))}
-                          rows={2}
-                        />
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                           {sim.result_data?.file_tree && (
                             <button
