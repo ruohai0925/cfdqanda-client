@@ -34,20 +34,28 @@ const strings = {
     filterActive: '进行中',
     filterCompleted: '已完成',
     filterFailed: '失败',
-    modelSettings: '模型设置',
-    modelSettingsHint: '（必要）配置 LLM 提供商和认证',
+    modelSettings: '模型选择',
+    modelSettingsHint: '',
     modelProvider: 'LLM 提供商',
     modelVersion: '模型版本',
     apiKey: 'API Key',
     apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
+    modelChoiceDefault: 'GPT-4o-mini',
+    modelChoiceDefaultDesc: '平台提供 · 每人每天 {limit} 次',
+    modelChoiceCodex: 'Codex (gpt-5.3-codex)',
+    modelChoiceCodexDesc: '平台提供 · 共享每日额度，先到先得',
+    modelChoiceBYOK: '自带 API Key (BYOK)',
+    modelChoiceBYOKDesc: '使用自己的 API Key，不受平台额度限制',
     promptRequired: '请输入仿真需求！',
-    apiKeyRequired: '选择了 {provider} 但未填写 API Key，请输入你的 API Key。',
+    apiKeyRequired: '请输入你的 API Key。',
     apiKeyInvalidOpenAI: 'OpenAI API Key 应以 "sk-" 开头，请检查格式。',
     apiKeyInvalidAnthropic: 'Anthropic API Key 应以 "sk-ant-" 开头，请检查格式。',
-    codexFreeLabel: 'ChatGPT/Codex 订阅（推荐）',
-    codexTokenLabel: 'Codex 认证 Token',
+    codexFreeLabel: 'ChatGPT/Codex 订阅',
+    codexTokenLabel: 'Codex 认证 Token（可选）',
     codexTokenPlaceholder: '粘贴 ~/.codex/auth.json 中的 access_token',
-    codexTokenHint: '运行 codex login 后，从 ~/.codex/auth.json 复制 token。留空则使用服务器默认认证。',
+    codexTokenHint: '留空则使用平台默认额度。填写自己的 token 则不受平台额度限制。',
+    codexTokenRequired: 'BYOK 模式下必须填写你自己的 Codex Token。',
+    byokProviderLabel: '提供商',
     builtInSolver: '内置求解器',
     solverOpenFOAM: 'OpenFOAM v10',
     solverAMReX: 'AMReX',
@@ -123,20 +131,28 @@ const strings = {
     filterActive: 'Active',
     filterCompleted: 'Completed',
     filterFailed: 'Failed',
-    modelSettings: 'Model Settings',
-    modelSettingsHint: '(Necessary) Configure LLM provider and auth',
+    modelSettings: 'Model Selection',
+    modelSettingsHint: '',
     modelProvider: 'LLM Provider',
     modelVersion: 'Model Version',
     apiKey: 'API Key',
     apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
+    modelChoiceDefault: 'GPT-4o-mini',
+    modelChoiceDefaultDesc: 'Platform-provided · {limit} tasks/day per user',
+    modelChoiceCodex: 'Codex (gpt-5.3-codex)',
+    modelChoiceCodexDesc: 'Platform-provided · Shared daily quota, first come first served',
+    modelChoiceBYOK: 'Bring Your Own Key (BYOK)',
+    modelChoiceBYOKDesc: 'Use your own API key, no platform quota limits',
     promptRequired: 'Please enter your simulation requirements!',
-    apiKeyRequired: 'You selected {provider} but did not provide an API Key. Please enter your API Key.',
+    apiKeyRequired: 'Please enter your API Key.',
     apiKeyInvalidOpenAI: 'OpenAI API Key should start with "sk-". Please check the format.',
     apiKeyInvalidAnthropic: 'Anthropic API Key should start with "sk-ant-". Please check the format.',
-    codexFreeLabel: 'ChatGPT/Codex Subscription (Recommended)',
-    codexTokenLabel: 'Codex Auth Token',
+    codexFreeLabel: 'ChatGPT/Codex Subscription',
+    codexTokenLabel: 'Codex Auth Token (optional)',
     codexTokenPlaceholder: 'Paste access_token from ~/.codex/auth.json',
-    codexTokenHint: 'Run "codex login", then copy the token from ~/.codex/auth.json. Leave empty to use server default auth.',
+    codexTokenHint: 'Leave empty to use platform shared quota. Provide your own token for unlimited usage.',
+    codexTokenRequired: 'BYOK mode requires your own Codex Token.',
+    byokProviderLabel: 'Provider',
     builtInSolver: 'Built-in Solver',
     solverOpenFOAM: 'OpenFOAM v10',
     solverAMReX: 'AMReX',
@@ -248,8 +264,10 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [solverBackend, setSolverBackend] = useState('openfoam-v10');
 
   // Model settings state
+  // modelChoice: 'default' (gpt-4o-mini), 'codex' (gpt-5.3-codex), 'byok' (bring your own key)
   const [showModelSettings, setShowModelSettings] = useState(false);
-  const [modelProvider, setModelProvider] = useState('openai-codex');
+  const [modelChoice, setModelChoice] = useState('default');
+  const [modelProvider, setModelProvider] = useState('openai');
   const [modelVersion, setModelVersion] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [codexToken, setCodexToken] = useState('');
@@ -510,10 +528,10 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       return;
     }
 
-    // Validate API key when a cloud provider is selected
-    if (showModelSettings && (modelProvider === 'openai' || modelProvider === 'anthropic')) {
+    // Validate credentials for BYOK mode (only openai / anthropic, both require API key)
+    if (modelChoice === 'byok') {
       if (!apiKey.trim()) {
-        toast.error(t.apiKeyRequired.replace('{provider}', modelProvider === 'openai' ? 'OpenAI' : 'Anthropic'));
+        toast.error(t.apiKeyRequired);
         return;
       }
       if (modelProvider === 'openai' && !apiKey.startsWith('sk-')) {
@@ -534,14 +552,21 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       if (solverBackend !== 'openfoam-v10') {
         requestBody.solver_backend = solverBackend;
       }
-      if (showModelSettings && (modelProvider || effectiveVersion || apiKey || codexToken)) {
+      // Build llm_config based on model choice
+      if (modelChoice === 'codex') {
+        // Platform-provided Codex: send provider+model, no key (worker uses server auth)
+        const llmConfig = { model_provider: 'openai-codex', model_version: 'gpt-5.3-codex' };
+        if (codexToken) llmConfig.codex_token = codexToken;  // optional: user's own token
+        requestBody.llm_config = llmConfig;
+      } else if (modelChoice === 'byok') {
+        // BYOK: send user's provider + model + API key
         const llmConfig = {};
         if (modelProvider) llmConfig.model_provider = modelProvider;
         if (effectiveVersion) llmConfig.model_version = effectiveVersion;
         if (apiKey) llmConfig.api_key = apiKey;
-        if (codexToken) llmConfig.codex_token = codexToken;
         requestBody.llm_config = llmConfig;
       }
+      // modelChoice === 'default': send NO llm_config → worker uses openai/gpt-4o-mini
       // Pre-run end time
       if (showPreRunSettings && preRunEndTime !== '') {
         requestBody.pre_run_end_time = parseInt(preRunEndTime, 10);
@@ -628,7 +653,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             )}
           </div>
 
-          {/* Model settings collapsible */}
+          {/* Model selection */}
           <div style={{ margin: '12px 0' }}>
             <button
               type="button"
@@ -642,94 +667,127 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                 fontSize: '0.9rem',
               }}
             >
-              {showModelSettings ? '▼' : '▶'} {t.modelSettings} {t.modelSettingsHint}
+              {showModelSettings ? '▼' : '▶'} {t.modelSettings}
             </button>
 
             {showModelSettings && (
-              <div style={{
-                marginTop: '10px',
-                padding: '14px',
-                border: '1px solid var(--border)',
-                borderRadius: '6px',
-                background: 'var(--bg-tertiary)',
-              }}>
-                <div style={{ marginBottom: '10px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-                    {t.modelProvider}
-                  </label>
-                  <select
-                    value={modelProvider}
-                    onChange={(e) => {
-                      setModelProvider(e.target.value);
-                      setModelVersion('');
-                      setApiKey('');
-                      setCodexToken('');
-                    }}
-                    style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                  >
-                    <option value="openai-codex">{t.codexFreeLabel}</option>
-                    <option value="openai">OpenAI (API Key)</option>
-                    <option value="anthropic">Anthropic (API Key)</option>
-                  </select>
-                </div>
-
-                {modelProvider && (
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-                      {t.modelVersion}
-                    </label>
-                    {(() => {
-                      const knownModels = MODEL_VERSIONS[modelProvider] || [];
-                      const defaultModel = knownModels.find(m => m.isDefault);
-                      return (
-                        <select
-                          className="inputField"
-                          value={modelVersion}
-                          onChange={(e) => setModelVersion(e.target.value)}
-                        >
-                          <option value="">{defaultModel ? `${defaultModel.value} (default)` : ''}</option>
-                          {knownModels.filter(m => !m.isDefault).map(m => (
-                            <option key={m.value} value={m.value}>{m.label}</option>
-                          ))}
-                        </select>
-                      );
-                    })()}
+              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {/* Option 1: GPT-4o-mini (default) */}
+                <label style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
+                  border: `1.5px solid ${modelChoice === 'default' ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: '6px', cursor: 'pointer',
+                  background: modelChoice === 'default' ? 'var(--bg-tertiary)' : 'transparent',
+                }}>
+                  <input type="radio" name="modelChoice" value="default" checked={modelChoice === 'default'}
+                    onChange={() => { setModelChoice('default'); setApiKey(''); setCodexToken(''); }}
+                    style={{ marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceDefault}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      {t.modelChoiceDefaultDesc.replace('{limit}', '5')}
+                    </div>
                   </div>
-                )}
+                </label>
 
-                {(modelProvider === 'openai' || modelProvider === 'anthropic') && (
-                  <div style={{ marginBottom: '4px' }}>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
-                      {t.apiKey}
-                    </label>
-                    <input
-                      type="password"
-                      className="inputField"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      placeholder={modelProvider === 'openai' ? 'sk-...' : 'sk-ant-...'}
-                      autoComplete="off"
-                      style={{ marginBottom: '4px' }}
-                    />
-                    <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{t.apiKeyHint}</small>
+                {/* Option 2: Codex (shared quota) */}
+                <label style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
+                  border: `1.5px solid ${modelChoice === 'codex' ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: '6px', cursor: 'pointer',
+                  background: modelChoice === 'codex' ? 'var(--bg-tertiary)' : 'transparent',
+                }}>
+                  <input type="radio" name="modelChoice" value="codex" checked={modelChoice === 'codex'}
+                    onChange={() => { setModelChoice('codex'); setApiKey(''); setCodexToken(''); }}
+                    style={{ marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceCodex}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t.modelChoiceCodexDesc}</div>
                   </div>
-                )}
+                </label>
 
-                {modelProvider === 'openai-codex' && (
-                  <div style={{ marginBottom: '4px' }}>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                {/* Codex: optional own token */}
+                {modelChoice === 'codex' && (
+                  <div style={{ marginLeft: '28px', marginBottom: '2px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
                       {t.codexTokenLabel}
                     </label>
-                    <input
-                      type="password"
-                      className="inputField"
-                      value={codexToken}
+                    <input type="password" className="inputField" value={codexToken}
                       onChange={(e) => setCodexToken(e.target.value)}
-                      placeholder={t.codexTokenPlaceholder}
-                      autoComplete="off"
-                      style={{ marginBottom: '4px' }}
-                    />
-                    <small style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{t.codexTokenHint}</small>
+                      placeholder={t.codexTokenPlaceholder} autoComplete="off"
+                      style={{ marginBottom: '4px' }} />
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.codexTokenHint}</small>
+                  </div>
+                )}
+
+                {/* Option 3: BYOK */}
+                <label style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
+                  border: `1.5px solid ${modelChoice === 'byok' ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: '6px', cursor: 'pointer',
+                  background: modelChoice === 'byok' ? 'var(--bg-tertiary)' : 'transparent',
+                }}>
+                  <input type="radio" name="modelChoice" value="byok" checked={modelChoice === 'byok'}
+                    onChange={() => { setModelChoice('byok'); setModelProvider('openai'); setModelVersion(''); setApiKey(''); setCodexToken(''); }}
+                    style={{ marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceBYOK}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t.modelChoiceBYOKDesc}</div>
+                  </div>
+                </label>
+
+                {/* BYOK expanded: provider + model + key */}
+                {modelChoice === 'byok' && (
+                  <div style={{
+                    marginLeft: '28px', padding: '10px 12px',
+                    border: '1px solid var(--border)', borderRadius: '6px',
+                    background: 'var(--bg-tertiary)',
+                  }}>
+                    {/* Provider */}
+                    <div style={{ marginBottom: '8px' }}>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
+                        {t.byokProviderLabel}
+                      </label>
+                      <select value={modelProvider}
+                        onChange={(e) => { setModelProvider(e.target.value); setModelVersion(''); setApiKey(''); }}
+                        style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                      >
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                      </select>
+                    </div>
+
+                    {/* Model version */}
+                    <div style={{ marginBottom: '8px' }}>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
+                        {t.modelVersion}
+                      </label>
+                      {(() => {
+                        const knownModels = MODEL_VERSIONS[modelProvider] || [];
+                        const defaultModel = knownModels.find(m => m.isDefault);
+                        return (
+                          <select className="inputField" value={modelVersion}
+                            onChange={(e) => setModelVersion(e.target.value)}>
+                            <option value="">{defaultModel ? `${defaultModel.value} (default)` : ''}</option>
+                            {knownModels.filter(m => !m.isDefault).map(m => (
+                              <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                          </select>
+                        );
+                      })()}
+                    </div>
+
+                    {/* API Key (required for BYOK) */}
+                    <div style={{ marginBottom: '4px' }}>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
+                        {t.apiKey}
+                      </label>
+                      <input type="password" className="inputField" value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder={modelProvider === 'openai' ? 'sk-...' : 'sk-ant-...'}
+                        autoComplete="off" style={{ marginBottom: '4px' }} />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.apiKeyHint}</small>
+                    </div>
                   </div>
                 )}
               </div>
