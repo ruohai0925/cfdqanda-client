@@ -249,6 +249,21 @@ const MODEL_VERSIONS = {
     { value: 'claude-opus-4-6', label: 'claude-opus-4-6' },
     { value: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5-20251001' },
   ],
+  'deepseek': [
+    { value: 'deepseek-chat', label: 'deepseek-chat (V3)', isDefault: true },
+    { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)' },
+  ],
+  'qwen': [
+    { value: 'qwen-plus', label: 'qwen-plus', isDefault: true },
+    { value: 'qwen-turbo', label: 'qwen-turbo' },
+    { value: 'qwen-max', label: 'qwen-max' },
+  ],
+};
+
+// OpenAI-compatible providers: use OPENAI_API_BASE to redirect API calls
+const OPENAI_COMPATIBLE_PROVIDERS = {
+  'deepseek': 'https://api.deepseek.com',
+  'qwen': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 };
 
 export default function AISimulationTab({ session, language, storageUsage }) {
@@ -528,7 +543,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       return;
     }
 
-    // Validate credentials for BYOK mode (only openai / anthropic, both require API key)
+    // Validate credentials for BYOK mode
     if (modelChoice === 'byok') {
       if (!apiKey.trim()) {
         toast.error(t.apiKeyRequired);
@@ -542,6 +557,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         toast.error(t.apiKeyInvalidAnthropic);
         return;
       }
+      // DeepSeek and Qwen keys have no universal prefix — just check non-empty (already done above)
     }
 
     const effectiveVersion = modelVersion || '';
@@ -564,6 +580,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         if (modelProvider) llmConfig.model_provider = modelProvider;
         if (effectiveVersion) llmConfig.model_version = effectiveVersion;
         if (apiKey) llmConfig.api_key = apiKey;
+        // OpenAI-compatible providers (DeepSeek, Qwen): include base_url for worker
+        const baseUrl = OPENAI_COMPATIBLE_PROVIDERS[modelProvider];
+        if (baseUrl) llmConfig.base_url = baseUrl;
         requestBody.llm_config = llmConfig;
       }
       // modelChoice === 'default': send NO llm_config → worker uses openai/gpt-4o-mini
@@ -754,6 +773,8 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       >
                         <option value="openai">OpenAI</option>
                         <option value="anthropic">Anthropic</option>
+                        <option value="deepseek">DeepSeek</option>
+                        <option value="qwen">Qwen (通义千问)</option>
                       </select>
                     </div>
 
@@ -784,7 +805,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       </label>
                       <input type="password" className="inputField" value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
-                        placeholder={modelProvider === 'openai' ? 'sk-...' : 'sk-ant-...'}
+                        placeholder={
+                          modelProvider === 'openai' ? 'sk-...' :
+                          modelProvider === 'anthropic' ? 'sk-ant-...' :
+                          modelProvider === 'deepseek' ? 'sk-...' :
+                          'sk-...'
+                        }
                         autoComplete="off" style={{ marginBottom: '4px' }} />
                       <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.apiKeyHint}</small>
                     </div>
