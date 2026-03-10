@@ -98,6 +98,7 @@ const strings = {
 完整许可协议文本请参阅各代码仓库中的 LICENSE 文件：
 • 前端：github.com/ruohai0925/cfdqanda-client/blob/main/LICENSE
 • 后端：github.com/ruohai0925/cfdqanda-server/blob/main/LICENSE
+• 中间件：github.com/ruohai0925/cfdqanda-middleware/blob/main/LICENSE
 
 违反许可条款的，在收到书面通知后 32 天内纠正可保留许可，否则许可立即终止。`,
       },
@@ -206,6 +207,7 @@ Prohibited actions:
 The full license text is available in the LICENSE file of each repository:
 • Frontend: github.com/ruohai0925/cfdqanda-client/blob/main/LICENSE
 • Backend: github.com/ruohai0925/cfdqanda-server/blob/main/LICENSE
+• Middleware: github.com/ruohai0925/cfdqanda-middleware/blob/main/LICENSE
 
 If you violate the license terms, you have 32 days from written notice to come into full compliance; otherwise, all your licenses end immediately.`,
       },
