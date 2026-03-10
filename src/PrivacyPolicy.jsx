@@ -19,6 +19,7 @@ const strings = {
         heading: '2. Cookie 与本地存储',
         content: `本平台不使用传统 Cookie。我们使用浏览器的 localStorage 存储以下数据：
 • Supabase 认证令牌（用于保持登录状态）
+• 用户保存的模型和执行设置（如 LLM 提供商、模型版本、流水线模式等，不含 API Key 等敏感信息）
 
 我们不使用任何第三方追踪 Cookie、广告 SDK 或用户行为分析工具。您的浏览行为不会被追踪或分析。`,
       },
@@ -80,8 +81,29 @@ const strings = {
 • 任务领取使用数据库级原子锁（FOR UPDATE SKIP LOCKED），防止并发冲突`,
       },
       {
-        heading: '9. 联系我们',
-        content: `如果您对本隐私政策有任何疑问，或希望行使您的数据权利（包括删除账户、导出数据、撤回同意等），请通过以下方式联系我们：
+        heading: '9. 开源许可与使用限制',
+        content: `CFDQandA 平台的源代码在 PolyForm Strict License 1.0.0 许可下发布。这意味着：
+
+允许的用途：
+• 个人学习、研究、实验和测试（无商业意图）
+• 教育机构、公共研究组织、慈善组织和政府机构的非营利使用
+• 业余爱好项目和个人娱乐
+
+禁止的行为：
+• 商业用途：不得将本平台或其源代码用于任何商业目的，包括但不限于出售、集成到商业产品、或为商业客户提供服务
+• 分发：不得重新分发本软件的源代码
+• 衍生作品：不得基于本软件创建修改版本或衍生作品
+• 再许可：不得将您获得的许可转让或再许可给他人
+
+完整许可协议文本请参阅各代码仓库中的 LICENSE 文件：
+• 前端：github.com/ruohai0925/cfdqanda-client/blob/main/LICENSE
+• 后端：github.com/ruohai0925/cfdqanda-server/blob/main/LICENSE
+
+违反许可条款的，在收到书面通知后 32 天内纠正可保留许可，否则许可立即终止。`,
+      },
+      {
+        heading: '10. 联系我们',
+        content: `如果您对本隐私政策或许可协议有任何疑问，或希望行使您的数据权利（包括删除账户、导出数据、撤回同意等），请通过以下方式联系我们：
 • 邮箱: apexflowcfd@gmail.com`,
       },
     ],
@@ -105,6 +127,7 @@ const strings = {
         heading: '2. Cookies and Local Storage',
         content: `This platform does not use traditional cookies. We use the browser's localStorage to store:
 • Supabase authentication token (to maintain your login session)
+• User-saved model and execution settings (e.g. LLM provider, model version, pipeline mode — no sensitive data such as API keys)
 
 We do not use any third-party tracking cookies, advertising SDKs, or user behavior analytics tools. Your browsing behavior is not tracked or analyzed.`,
       },
@@ -166,8 +189,29 @@ We do not sell or share your data with third-party advertisers.`,
 • Task claiming uses database-level atomic locks (FOR UPDATE SKIP LOCKED) to prevent concurrency conflicts`,
       },
       {
-        heading: '9. Contact Us',
-        content: `If you have any questions about this Privacy Policy or wish to exercise your data rights (including account deletion, data export, or consent withdrawal), please contact us:
+        heading: '9. Open Source License & Usage Restrictions',
+        content: `The CFDQandA platform source code is released under the PolyForm Strict License 1.0.0. This means:
+
+Permitted uses:
+• Personal study, research, experimentation, and testing (with no commercial intent)
+• Non-profit use by educational institutions, public research organizations, charities, and government agencies
+• Hobby projects and personal entertainment
+
+Prohibited actions:
+• Commercial use: You may not use this platform or its source code for any commercial purpose, including but not limited to selling, integrating into commercial products, or providing services to commercial clients
+• Distribution: You may not redistribute the source code of this software
+• Derivative works: You may not create modified versions or derivative works based on this software
+• Sublicensing: You may not transfer or sublicense your licenses to anyone else
+
+The full license text is available in the LICENSE file of each repository:
+• Frontend: github.com/ruohai0925/cfdqanda-client/blob/main/LICENSE
+• Backend: github.com/ruohai0925/cfdqanda-server/blob/main/LICENSE
+
+If you violate the license terms, you have 32 days from written notice to come into full compliance; otherwise, all your licenses end immediately.`,
+      },
+      {
+        heading: '10. Contact Us',
+        content: `If you have any questions about this Privacy Policy or license agreement, or wish to exercise your data rights (including account deletion, data export, or consent withdrawal), please contact us:
 • Email: apexflowcfd@gmail.com`,
       },
     ],
