@@ -103,6 +103,9 @@ const strings = {
     cloudStorageDetail: '{count} 个任务',
     expiresInDays: '{days} 天后自动删除',
     expiresToday: '今天将自动删除',
+    saveSettings: '保存设置',
+    settingsSaved: '设置已保存',
+    settingsLoaded: '已加载上次保存的设置',
   },
   en: {
     newSimulationTitle: 'Create a new simulation task',
@@ -200,6 +203,9 @@ const strings = {
     cloudStorageDetail: '{count} tasks',
     expiresInDays: 'Auto-deletes in {days}d',
     expiresToday: 'Auto-deletes today',
+    saveSettings: 'Save Settings',
+    settingsSaved: 'Settings saved',
+    settingsLoaded: 'Loaded saved settings',
   }
 };
 
@@ -300,6 +306,34 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
+
+  // --- Persistent settings (localStorage) ---
+  const SETTINGS_KEY = `cfdqanda_settings_${session?.user?.id || 'anon'}`;
+
+  const saveUserSettings = () => {
+    const settings = {
+      modelChoice, modelProvider, modelVersion, solverBackend,
+      pipelineMode, selectedCheckpoints, preRunEndTime,
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    toast.success(t.settingsSaved);
+  };
+
+  // Load saved settings on mount (once)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (!saved) return;
+      const s = JSON.parse(saved);
+      if (s.modelChoice) setModelChoice(s.modelChoice);
+      if (s.modelProvider) setModelProvider(s.modelProvider);
+      if (s.modelVersion !== undefined) setModelVersion(s.modelVersion);
+      if (s.solverBackend) setSolverBackend(s.solverBackend);
+      if (s.pipelineMode) setPipelineMode(s.pipelineMode);
+      if (s.selectedCheckpoints) setSelectedCheckpoints(s.selectedCheckpoints);
+      if (s.preRunEndTime !== undefined) setPreRunEndTime(s.preRunEndTime);
+    } catch { /* ignore corrupted localStorage */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Download ZIP
   const handleDownloadZip = async (simulation) => {
@@ -906,6 +940,21 @@ export default function AISimulationTab({ session, language, storageUsage }) {
               </div>
             )}
           </div>
+
+          {/* Save settings button — visible when any settings panel is open */}
+          {(showModelSettings || showPreRunSettings) && (
+            <div style={{ textAlign: 'right', margin: '4px 0 8px' }}>
+              <button type="button" onClick={saveUserSettings}
+                style={{
+                  padding: '4px 14px', fontSize: '0.78rem',
+                  background: 'var(--bg-tertiary)', color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                }}>
+                {t.saveSettings}
+              </button>
+            </div>
+          )}
 
           <textarea
             className="inputField prompt-textarea"
