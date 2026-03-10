@@ -4,16 +4,18 @@ import { Toaster } from 'react-hot-toast'
 import Auth from './Auth'
 import MainLayout from './MainLayout'
 import PrivacyPolicy from './PrivacyPolicy'
+import PlatformFeedback from './PlatformFeedback'
 
 const footerStrings = {
-  zh: { privacyLink: '隐私政策' },
-  en: { privacyLink: 'Privacy Policy' },
+  zh: { privacyLink: '隐私政策', feedbackLink: '平台反馈' },
+  en: { privacyLink: 'Privacy Policy', feedbackLink: 'Feedback' },
 };
 
 function App() {
   const [session, setSession] = useState(null)
   const [language, setLanguage] = useState('zh')
   const [currentPage, setCurrentPage] = useState(window.location.hash === '#privacy' ? 'privacy' : 'main')
+  const [showFeedback, setShowFeedback] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -65,7 +67,18 @@ function App() {
           <a href="#privacy" onClick={navigateToPrivacy}>
             {footerStrings[language].privacyLink}
           </a>
+          <span className="footer-sep">·</span>
+          <a href="#" onClick={(e) => { e.preventDefault(); setShowFeedback(true); }}>
+            {footerStrings[language].feedbackLink}
+          </a>
         </footer>
+        {showFeedback && (
+          <PlatformFeedback
+            language={language}
+            userId={session.user.id}
+            onClose={() => setShowFeedback(false)}
+          />
+        )}
       </>
     )
   }

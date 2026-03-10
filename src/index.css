@@ -1323,6 +1323,67 @@ select {
   text-decoration: underline;
 }
 
+.footer-sep {
+  margin: 0 0.5rem;
+  color: var(--text-muted);
+}
+
+/* ===== Platform Feedback Modal ===== */
+
+.feedback-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.feedback-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 500px;
+}
+
+.feedback-modal h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+}
+
+.feedback-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.feedback-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.feedback-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
+
+.feedback-actions button {
+  width: auto;
+  padding: 0.5rem 1.25rem;
+}
+
 /* ===== Privacy Policy Page ===== */
 .privacy-policy {
   max-width: 700px;
