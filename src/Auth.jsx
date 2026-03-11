@@ -31,6 +31,11 @@ const strings = {
     hasAccount: '已有账号？',
     switchToSignup: '注册',
     switchToLogin: '登录',
+    invitationCode: '邀请码',
+    invitationCodePlaceholder: '请输入邀请码（如 CFDQ-XXXX-XXXX）',
+    invitationCodeRequired: '请输入邀请码。',
+    invitationCodeInvalid: '邀请码无效或已被使用。',
+    emailAlreadyInvited: '该邮箱已使用过邀请码。',
     privacyAccept: '我已阅读并同意',
     privacyLink: '隐私政策',
     privacyRequired: '请先同意隐私政策。',
@@ -63,6 +68,11 @@ const strings = {
     hasAccount: 'Already have an account?',
     switchToSignup: 'Sign Up',
     switchToLogin: 'Login',
+    invitationCode: 'Invitation Code',
+    invitationCodePlaceholder: 'Enter your invitation code (e.g. CFDQ-XXXX-XXXX)',
+    invitationCodeRequired: 'Please enter an invitation code.',
+    invitationCodeInvalid: 'Invalid or already used invitation code.',
+    emailAlreadyInvited: 'This email has already used an invitation code.',
     privacyAccept: 'I have read and agree to the',
     privacyLink: 'Privacy Policy',
     privacyRequired: 'Please accept the Privacy Policy.',
@@ -80,6 +90,7 @@ export default function Auth({ language, setLanguage }) {
   const [formMode, setFormMode] = useState('login') // 'login' | 'signup' | 'reset'
 
   // Signup-only fields
+  const [invitationCode, setInvitationCode] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [organization, setOrganization] = useState('')
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
@@ -116,6 +127,10 @@ export default function Auth({ language, setLanguage }) {
   const handleSignUp = async (event) => {
     event.preventDefault()
 
+    if (!invitationCode.trim()) {
+      toast.error(t.invitationCodeRequired);
+      return;
+    }
     if (!displayName.trim()) {
       toast.error(t.displayNameRequired);
       return;
@@ -131,6 +146,25 @@ export default function Auth({ language, setLanguage }) {
 
     try {
       setLoading(true)
+
+      // Step 1: Claim invitation code (atomic, prevents concurrent use)
+      const { data: claimResult, error: claimError } = await supabase
+        .rpc('claim_invitation_code', {
+          p_code: invitationCode.trim(),
+          p_email: email.trim(),
+        });
+
+      if (claimError) {
+        toast.error(t.invitationCodeInvalid);
+        return;
+      }
+      if (!claimResult?.success) {
+        const errKey = claimResult?.error;
+        toast.error(errKey === 'email_already_used' ? t.emailAlreadyInvited : t.invitationCodeInvalid);
+        return;
+      }
+
+      // Step 2: Sign up (invitation code already claimed)
       const signUpOptions = {
         // Store display_name/organization in user_metadata so it survives
         // email verification. Profile row is created on first login (MainLayout).
@@ -148,7 +182,15 @@ export default function Auth({ language, setLanguage }) {
         password,
         options: signUpOptions,
       })
-      if (error) throw error
+
+      if (error) {
+        // Sign up failed — unclaim the invitation code so it can be reused
+        await supabase.rpc('unclaim_invitation_code', {
+          p_code: invitationCode.trim(),
+          p_email: email.trim(),
+        });
+        throw error;
+      }
 
       toast.success(t.signupSuccess)
     } catch (error) {
@@ -245,6 +287,8 @@ export default function Auth({ language, setLanguage }) {
       {/* === Signup Form === */}
       {formMode === 'signup' && (
         <form onSubmit={handleSignUp}>
+          <label htmlFor="invitation-code">{t.invitationCode}</label>
+          <input id="invitation-code" className="inputField" type="text" placeholder={t.invitationCodePlaceholder} value={invitationCode} required onChange={(e) => setInvitationCode(e.target.value.toUpperCase())} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }} />
           <label htmlFor="signup-email">{t.email}</label>
           <input id="signup-email" className="inputField" type="email" placeholder={t.emailPlaceholder} value={email} required onChange={(e) => setEmail(e.target.value)} />
           <label htmlFor="signup-password">{t.password}</label>
@@ -278,7 +322,7 @@ export default function Auth({ language, setLanguage }) {
             </div>
           )}
 
-          <button className="button-block" disabled={loading || !privacyAccepted}>
+          <button className="button-block" disabled={loading || !privacyAccepted || !invitationCode.trim()}>
             {loading ? t.loading : t.signupButton}
           </button>
           <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
