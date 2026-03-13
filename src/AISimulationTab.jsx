@@ -720,8 +720,8 @@ export default function AISimulationTab({ session, language, storageUsage }) {
     { key: 'all', label: t.filterAll },
     { key: 'active', label: t.filterActive },
     { key: 'completed', label: t.filterCompleted },
-    { key: 'failed', label: t.filterFailed },
     { key: 'cancelled', label: t.filterCancelled },
+    { key: 'failed', label: t.filterFailed },
   ];
 
   return (
