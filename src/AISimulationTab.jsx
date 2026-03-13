@@ -34,6 +34,7 @@ const strings = {
     filterActive: '进行中',
     filterCompleted: '已完成',
     filterFailed: '失败',
+    filterCancelled: '已取消',
     modelSettings: '模型选择',
     modelSettingsHint: '',
     modelProvider: 'LLM 提供商',
@@ -142,6 +143,7 @@ const strings = {
     filterActive: 'Active',
     filterCompleted: 'Completed',
     filterFailed: 'Failed',
+    filterCancelled: 'Cancelled',
     modelSettings: 'Model Selection',
     modelSettingsHint: '',
     modelProvider: 'LLM Provider',
@@ -719,6 +721,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
     { key: 'active', label: t.filterActive },
     { key: 'completed', label: t.filterCompleted },
     { key: 'failed', label: t.filterFailed },
+    { key: 'cancelled', label: t.filterCancelled },
   ];
 
   return (
