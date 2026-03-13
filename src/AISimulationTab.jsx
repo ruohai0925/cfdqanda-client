@@ -104,6 +104,7 @@ const strings = {
     errorCodexQuota: '平台 Codex 共享额度已用完，请稍后重试或切换到其他模型。',
     errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
     errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
+    errorTimeout: '仿真运行超时，可能是模型配置有误或网格过大。请检查后重试。',
     cloudStorageDetail: '{count} 个任务',
     expiresInDays: '{days} 天后自动删除',
     expiresToday: '今天将自动删除',
@@ -208,6 +209,7 @@ const strings = {
     errorCodexQuota: 'Platform Codex shared quota exceeded. Please try again later or switch to another model.',
     errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
     errorAuth: 'LLM API authentication failed. Please check your API key.',
+    errorTimeout: 'Simulation timed out. This may indicate incorrect model config or an overly large mesh. Please review and retry.',
     cloudStorageDetail: '{count} tasks',
     expiresInDays: 'Auto-deletes in {days}d',
     expiresToday: 'Auto-deletes today',
@@ -1139,6 +1141,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         {sim.result_data.error_category === 'codex_quota_exceeded' ? t.errorCodexQuota
                           : sim.result_data.error_category === 'rate_limit' ? t.errorRateLimit
                           : sim.result_data.error_category === 'auth_error' ? t.errorAuth
+                          : sim.result_data.error_category === 'timeout' ? t.errorTimeout
                           : sim.result_data.error}
                       </div>
                     )}
