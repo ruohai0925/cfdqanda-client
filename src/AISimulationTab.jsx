@@ -100,6 +100,10 @@ const strings = {
     browsePreRunButton: '查看 Pre-Run 结果',
     browseFilesReviewButton: '查看生成文件',
     browseFilesButton: '浏览文件',
+    errorReason: '失败原因',
+    errorCodexQuota: '平台 Codex 共享额度已用完，请稍后重试或切换到其他模型。',
+    errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
+    errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
     cloudStorageDetail: '{count} 个任务',
     expiresInDays: '{days} 天后自动删除',
     expiresToday: '今天将自动删除',
@@ -200,6 +204,10 @@ const strings = {
     browsePreRunButton: 'View Pre-Run Results',
     browseFilesReviewButton: 'View Generated Files',
     browseFilesButton: 'Browse Files',
+    errorReason: 'Reason',
+    errorCodexQuota: 'Platform Codex shared quota exceeded. Please try again later or switch to another model.',
+    errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
+    errorAuth: 'LLM API authentication failed. Please check your API key.',
     cloudStorageDetail: '{count} tasks',
     expiresInDays: 'Auto-deletes in {days}d',
     expiresToday: 'Auto-deletes today',
@@ -1114,6 +1122,26 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         )}
                       </div>
                     </div>
+
+                    {/* Error reason — shown for failed/cancelled tasks */}
+                    {(sim.status === 'failed' || sim.status === 'cancelled') && sim.result_data?.error && (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '8px 12px',
+                        fontSize: '0.82rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(220, 53, 69, 0.3)',
+                        background: 'rgba(220, 53, 69, 0.06)',
+                        color: 'var(--danger, #dc3545)',
+                      }}>
+                        <strong>{t.errorReason}:</strong>{' '}
+                        {/* Show localized message for known error categories */}
+                        {sim.result_data.error_category === 'codex_quota_exceeded' ? t.errorCodexQuota
+                          : sim.result_data.error_category === 'rate_limit' ? t.errorRateLimit
+                          : sim.result_data.error_category === 'auth_error' ? t.errorAuth
+                          : sim.result_data.error}
+                      </div>
+                    )}
 
                     {/* Checkpoint panel — controlled pipeline mode */}
                     {sim.status === 'checkpoint' && (
