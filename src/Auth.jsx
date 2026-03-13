@@ -287,8 +287,6 @@ export default function Auth({ language, setLanguage }) {
       {/* === Signup Form === */}
       {formMode === 'signup' && (
         <form onSubmit={handleSignUp}>
-          <label htmlFor="invitation-code">{t.invitationCode}</label>
-          <input id="invitation-code" className="inputField" type="text" placeholder={t.invitationCodePlaceholder} value={invitationCode} required onChange={(e) => setInvitationCode(e.target.value.toUpperCase())} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }} />
           <label htmlFor="signup-email">{t.email}</label>
           <input id="signup-email" className="inputField" type="email" placeholder={t.emailPlaceholder} value={email} required onChange={(e) => setEmail(e.target.value)} />
           <label htmlFor="signup-password">{t.password}</label>
@@ -297,6 +295,8 @@ export default function Auth({ language, setLanguage }) {
           <input id="display-name" className="inputField" type="text" placeholder={t.displayNamePlaceholder} value={displayName} required onChange={(e) => setDisplayName(e.target.value)} />
           <label htmlFor="organization">{t.organization}</label>
           <input id="organization" className="inputField" type="text" placeholder={t.organizationPlaceholder} value={organization} onChange={(e) => setOrganization(e.target.value)} />
+          <label htmlFor="invitation-code">{t.invitationCode}</label>
+          <input id="invitation-code" className="inputField" type="text" placeholder={t.invitationCodePlaceholder} value={invitationCode} required onChange={(e) => setInvitationCode(e.target.value.toUpperCase())} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }} />
 
           {/* Privacy policy checkbox */}
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '14px 0 6px', fontSize: '0.85rem', cursor: 'pointer' }}>
