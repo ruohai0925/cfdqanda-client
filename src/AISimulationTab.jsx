@@ -40,7 +40,7 @@ const strings = {
     modelVersion: '模型版本',
     apiKey: 'API Key',
     apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
-    modelChoiceDefault: 'GPT-4o-mini',
+    modelChoiceDefault: 'GPT-4.1-nano',
     modelChoiceDefaultDesc: '平台提供 · 每人每天 {limit} 次',
     modelChoiceCodex: 'Codex (gpt-5.3-codex)',
     modelChoiceCodexDesc: '平台提供 · 共享每日额度，先到先得',
@@ -140,7 +140,7 @@ const strings = {
     modelVersion: 'Model Version',
     apiKey: 'API Key',
     apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
-    modelChoiceDefault: 'GPT-4o-mini',
+    modelChoiceDefault: 'GPT-4.1-nano',
     modelChoiceDefaultDesc: 'Platform-provided · {limit} tasks/day per user',
     modelChoiceCodex: 'Codex (gpt-5.3-codex)',
     modelChoiceCodexDesc: 'Platform-provided · Shared daily quota, first come first served',
@@ -285,7 +285,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [solverBackend, setSolverBackend] = useState('openfoam-v10');
 
   // Model settings state
-  // modelChoice: 'default' (gpt-4o-mini), 'codex' (gpt-5.3-codex), 'byok' (bring your own key)
+  // modelChoice: 'default' (gpt-4.1-nano), 'codex' (gpt-5.3-codex), 'byok' (bring your own key)
   const [showModelSettings, setShowModelSettings] = useState(false);
   const [modelChoice, setModelChoice] = useState('default');
   const [modelProvider, setModelProvider] = useState('openai');
@@ -619,7 +619,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         if (baseUrl) llmConfig.base_url = baseUrl;
         requestBody.llm_config = llmConfig;
       }
-      // modelChoice === 'default': send NO llm_config → worker uses openai/gpt-4o-mini
+      // modelChoice === 'default': send NO llm_config → worker uses openai/gpt-4.1-nano
       // Pre-run end time
       if (showPreRunSettings && preRunEndTime !== '') {
         requestBody.pre_run_end_time = parseInt(preRunEndTime, 10);
@@ -725,7 +725,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
             {showModelSettings && (
               <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {/* Option 1: GPT-4o-mini (default) */}
+                {/* Option 1: GPT-4.1-nano (default) */}
                 <label style={{
                   display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
                   border: `1.5px solid ${modelChoice === 'default' ? 'var(--accent)' : 'var(--border)'}`,
