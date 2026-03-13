@@ -785,7 +785,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceDefault}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      {t.modelChoiceDefaultDesc.replace('{limit}', '5')}
+                      {t.modelChoiceDefaultDesc.replace('{limit}', '10')}
                     </div>
                   </div>
                 </label>

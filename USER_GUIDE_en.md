@@ -17,6 +17,7 @@
 9. [Downloading Data](#9-downloading-data)
 10. [Usage Limits & Quotas](#10-usage-limits--quotas)
 11. [FAQ](#11-faq)
+12. [Privacy Policy](#12-privacy-policy)
 
 ---
 
@@ -42,6 +43,8 @@ Registration steps:
 4. Check the privacy policy agreement checkbox
 5. Click the "Sign Up" button
 6. Check your email and click the verification link to complete registration
+
+> **Note**: After registration, a verification email will be sent to the email address you provided. You must click the link in the email to verify your account before you can log in. If you don't receive the email, please check your spam/junk folder or contact the administrator.
 
 > **Note**: Each invitation code can only be used once and is bound to a single email address. If you encounter issues during registration, contact the administrator to reset the invitation code.
 
@@ -274,7 +277,7 @@ When using Interactive mode, you can rate each checkpoint separately:
 
 | Item | Limit | Notes |
 |------|-------|-------|
-| Daily tasks | **10 per day** | Resets at UTC midnight. BYOK mode is unlimited |
+| Daily tasks (free models) | **10 per day** | Resets at UTC midnight. BYOK mode is unlimited |
 | Simulation timeout | **60 minutes** | Auto-marked as failed on timeout |
 | Submission rate | **5 per minute** | Per IP address |
 
@@ -286,7 +289,7 @@ When using Interactive mode, you can rate each checkpoint separately:
 | Completed task retention | **14 days** before automatic deletion |
 | Failed/cancelled task retention | **7 days** before automatic deletion |
 
-> **Tip**: If you run low on storage, you can manually delete old tasks to free up space. Each task card has a "Delete" button in the upper-right corner. You have an 8-second undo window after deletion.
+> **Tip**: Your current cloud storage usage is displayed in the top-right corner of the page. If you run low on storage, you can manually delete old tasks to free up space. Each task card has a "Delete" button in the upper-right corner. You have an 8-second undo window after deletion.
 
 ### 10.3 Free Models
 
@@ -328,6 +331,21 @@ Please contact the platform administrator. The platform is currently in closed b
 ### Q: Are my settings saved?
 
 Yes. Your model selection, execution mode, checkpoint preferences, and other settings are automatically saved to your browser's local storage and restored on your next visit.
+
+---
+
+## 12. Privacy Policy
+
+By using the CFDQandA platform, you agree to our Privacy Policy. You are required to accept the Privacy Policy checkbox during registration.
+
+Regarding your data, we commit to the following:
+
+- **API Keys**: Used only for the current task; immediately deleted from the database after the worker reads them
+- **Simulation data**: Stored on Supabase cloud; completed tasks are retained for 14 days, failed/cancelled tasks for 7 days, and soft-deleted tasks are permanently purged after 3 days
+- **Log sanitization**: API keys in log files are automatically replaced with `[REDACTED]` before upload
+- **Third-party services**: The platform uses Supabase (database/auth/storage), Vercel (frontend hosting), and LLM APIs (OpenAI/Anthropic, etc.). Your prompts are sent to the LLM provider to generate simulation configurations
+
+The full Privacy Policy can be accessed via the "Privacy Policy" link at the bottom of the page. If you have questions or wish to exercise your data rights (account deletion, data export, consent withdrawal, etc.), please contact the administrator.
 
 ---
 
