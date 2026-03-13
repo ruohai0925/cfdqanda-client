@@ -105,6 +105,9 @@ const strings = {
     errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
     errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
     errorTimeout: '仿真运行超时，可能是模型配置有误或网格过大。请检查后重试。',
+    queuePosition: '排队第 {n} 位',
+    queueElapsed: '已等待 {min} 分钟',
+    queueElapsedShort: '刚提交',
     cloudStorageDetail: '{count} 个任务',
     expiresInDays: '{days} 天后自动删除',
     expiresToday: '今天将自动删除',
@@ -210,6 +213,9 @@ const strings = {
     errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
     errorAuth: 'LLM API authentication failed. Please check your API key.',
     errorTimeout: 'Simulation timed out. This may indicate incorrect model config or an overly large mesh. Please review and retry.',
+    queuePosition: '#{n} in queue',
+    queueElapsed: 'waiting {min} min',
+    queueElapsedShort: 'just submitted',
     cloudStorageDetail: '{count} tasks',
     expiresInDays: 'Auto-deletes in {days}d',
     expiresToday: 'Auto-deletes today',
@@ -314,6 +320,10 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
   const [cancellingJobs, setCancellingJobs] = useState(new Set());
 
+  // Queue info state (for showing position + elapsed time on queued tasks)
+  const [queueInfo, setQueueInfo] = useState(null);
+  const [now, setNow] = useState(Date.now());
+
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
 
@@ -344,6 +354,30 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       if (s.preRunEndTime !== undefined) setPreRunEndTime(s.preRunEndTime);
     } catch { /* ignore corrupted localStorage */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Queue status polling — only active when there are queued tasks
+  useEffect(() => {
+    const hasQueued = simulations.some((s) => s.status === 'queued');
+    if (!hasQueued) { setQueueInfo(null); return; }
+
+    const fetchQueue = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/queue-status`);
+        if (res.ok) setQueueInfo(await res.json());
+      } catch { /* ignore network errors */ }
+    };
+    fetchQueue();
+    const interval = setInterval(fetchQueue, 30000);
+    return () => clearInterval(interval);
+  }, [simulations, API_URL]);
+
+  // Tick `now` every 60s so elapsed time updates for queued tasks
+  useEffect(() => {
+    const hasQueued = simulations.some((s) => s.status === 'queued');
+    if (!hasQueued) return;
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, [simulations]);
 
   // Download ZIP
   const handleDownloadZip = async (simulation) => {
@@ -1043,6 +1077,24 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       <span className={`status-badge status-${sim.status}`}>
                         {sim.status}
                       </span>
+                      {sim.status === 'queued' && (() => {
+                        const elapsed = Math.floor((now - new Date(sim.created_at).getTime()) / 60000);
+                        const pos = queueInfo?.queued_ids?.indexOf(String(sim.id));
+                        const posNum = pos !== undefined && pos >= 0 ? pos + 1 : null;
+                        return (
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--text-muted)',
+                            fontFamily: 'var(--font-mono)',
+                          }}>
+                            {posNum ? t.queuePosition.replace('{n}', posNum) : ''}
+                            {posNum ? ' · ' : ''}
+                            {elapsed >= 1
+                              ? t.queueElapsed.replace('{min}', elapsed)
+                              : t.queueElapsedShort}
+                          </span>
+                        );
+                      })()}
                       {sim.pipeline_mode === 'controlled' && sim.pipeline_stage && (
                         <span style={{
                           fontSize: '0.75rem',
