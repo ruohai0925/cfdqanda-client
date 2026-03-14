@@ -295,7 +295,7 @@ When using Interactive mode, you can rate each checkpoint separately:
 
 | Model | Cost | Limit |
 |-------|------|-------|
-| Codex (gpt-5.3-codex) | Free | 5 per user per day |
+| Codex (gpt-5.3-codex) | Free | 10 per user per day |
 | Codex (gpt-5.3-codex) | Free | Shared platform-wide quota |
 
 Model costs under BYOK mode are borne by the user.
