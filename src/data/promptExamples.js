@@ -40,16 +40,16 @@ const promptExamples = [
     prompt: "Perform an incompressible flow simulation in a 2D elbow-shaped channel using icoFoam solver. The domain has two inlets: one with a fixed velocity of (1 0 0) m/s and another with (0 3 0) m/s, and a pressure outlet with fixed value of 0. The walls (wall-4 and wall-8) have no-slip boundary conditions, and the front and back planes are set as empty for 2D simulation. Use PISO algorithm with 2 correctors and 2 non-orthogonal correctors. The kinematic viscosity is set to 0.01 m\u00B2/s. Run the simulation from t=0 to t=1 seconds with a timestep of 0.05s, writing results every 4 timesteps. For pressure solution, use PCG solver with DIC preconditioner (tolerance 1e-06, relTol 0.05), and for velocity, use smoothSolver with symGaussSeidel smoother (tolerance 1e-05). Initial conditions are zero velocity and pressure throughout the domain.",
   },
   {
-    id: 'backstep',
-    label: { zh: '后台阶湍流', en: 'Backward-Facing Step' },
+    id: 'hotRoom',
+    label: { zh: '室内自然对流', en: 'Natural Convection' },
     description: {
-      zh: '经典分离流：后台阶湍流，使用 pimpleFoam + k-epsilon 模型',
-      en: 'Classic separation flow: turbulent backward-facing step with pimpleFoam + k-epsilon',
+      zh: '传热算例：封闭房间内浮力驱动自然对流，使用 buoyantFoam 求解',
+      en: 'Heat transfer: buoyancy-driven natural convection in a room with buoyantFoam',
     },
-    tag: { zh: '湍流', en: 'Turbulent' },
-    solver: 'pimpleFoam',
-    domain: 'incompressible',
-    prompt: "Do a Reynolds-Averaged Simulation (RAS) of turbulent flow in a backward-facing step channel using pimpleFoam solver. The geometry consists of a 2D channel with dimensions: inlet section (-20.6 to 0 in x, 0 to 25.4 in y), main channel section (0 to 206 in x) with sudden expansion from 25.4 to 50.8 in y at x=0, and outlet section (206 to 290 in x) with gradual contraction to 33.2 in y (convertToMeters=0.001). Use k-epsilon turbulence model with inlet conditions k=0.375 m\u00B2/s\u00B2 and epsilon=14.855 m\u00B2/s\u00B3. Specify inlet velocity as uniform 10 m/s in x-direction, zero pressure at outlet, and no-slip conditions on upper and lower walls. Set kinematic viscosity to 1e-05 m\u00B2/s. The mesh should have varying resolution with 18 cells in inlet section, 180 cells in main channel, and 25 cells in outlet section along x-direction, with graded distribution in y-direction (27-30 cells). Use PIMPLE algorithm with 2 correctors, maxCo=1, and local Euler time discretization. Run simulation from t=0 to t=100s with deltaT=1s and write results every 10s. The domain has a thickness of 1 unit (-0.5 to 0.5 in z-direction) with empty-type boundary condition on front and back faces for 2D simulation.",
+    tag: { zh: '传热', en: 'Heat' },
+    solver: 'buoyantFoam',
+    domain: 'heatTransfer',
+    prompt: "Perform a buoyant thermal flow simulation using buoyantFoam solver in a rectangular room of dimensions 10x5x10 (convertToMeters=1). Use k-epsilon RAS turbulence model with PIMPLE algorithm (2 correctors, 1 outer corrector). The domain has three boundary types: floor, ceiling, and fixedWalls, all with no-slip velocity conditions and wall functions for k, epsilon, and thermal diffusivity (alphat). Initial conditions: temperature of 300K throughout the domain except for a hot spot of 600K in the region 4.5<=x<=5.5, 4.5<=z<=5.5 near the floor (y~0), pressure of 1e5 Pa, zero initial velocity. Physical properties: air with molecular weight 28.9 kg/kmol, specific heat capacity (Cp) of 1000 J/kgK, dynamic viscosity of 1.8e-05 kg/ms, Prandtl number of 0.7, using perfectGas equation of state. Gravity acts in negative y-direction (-9.81 m\u00B2/s). Mesh consists of 20x10x20 cells with uniform grading. Run simulation from t=0 to t=100s with fixed timestep of 2s and write results every 10 timesteps. Floor and ceiling have fixed temperature of 300K, while fixedWalls have zeroGradient temperature condition.",
   },
 ];
 
