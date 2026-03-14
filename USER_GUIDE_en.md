@@ -80,12 +80,12 @@ Describe your simulation requirements in natural language in the input box. A go
 
 The platform provides 4 preset examples — click any to auto-fill the input:
 
-| Example | Type | Solver | Difficulty |
-|---------|------|--------|------------|
-| **Lid-Driven Cavity Flow** | Incompressible | icoFoam | Beginner |
-| **Backward-Facing Step** | Incompressible | simpleFoam + k-epsilon | Turbulent |
-| **2D Airfoil** | Incompressible | simpleFoam + Spalart-Allmaras | External Aero |
-| **Natural Convection** | Heat Transfer | buoyantFoam | Heat Transfer |
+| Example | Type | Solver | Tag |
+|---------|------|--------|-----|
+| **Lid-Driven Cavity** | Incompressible laminar | icoFoam | Beginner |
+| **Porous Blockage** | Incompressible laminar + Darcy | pisoFoam | Porous |
+| **Elbow Channel** | Incompressible laminar, 2 inlets | icoFoam | Pipe |
+| **Natural Convection** | Heat transfer + buoyancy | buoyantFoam | Heat |
 
 ### 3.3 Submitting
 
@@ -291,10 +291,11 @@ When using Interactive mode, you can rate each checkpoint separately:
 
 | Model | Cost | Limit |
 |-------|------|-------|
-| Codex (gpt-5.3-codex) | Free | 10 per user per day |
-| Codex (gpt-5.3-codex) | Free | Shared platform-wide quota |
+| gpt-5.3-codex (default, recommended) | Free | 10 per user per day |
+| gpt-5.2-codex | Free | 10 per user per day |
+| gpt-5.2 | Free | 10 per user per day |
 
-Model costs under BYOK mode are borne by the user.
+All models above are provided via ChatGPT Plus subscription. Model costs under BYOK mode are borne by the user.
 
 ---
 
