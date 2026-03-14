@@ -659,7 +659,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       // DeepSeek and Qwen keys have no universal prefix — just check non-empty (already done above)
     }
 
-    const effectiveVersion = modelVersion || '';
+    const effectiveVersion = (modelVersion && modelVersion !== '__custom__') ? modelVersion : '';
 
     setLoading(true);
     try {
@@ -876,19 +876,28 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       {(() => {
                         const knownModels = MODEL_VERSIONS[modelProvider] || [];
                         const defaultModel = knownModels.find(m => m.isDefault);
-                        const listId = `models-${modelProvider}`;
-                        return (
-                          <>
-                            <input className="inputField" list={listId} value={modelVersion}
+                        const isCustom = modelVersion && !knownModels.some(m => m.value === modelVersion) && modelVersion !== '__custom__';
+                        const selectStyle = { width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' };
+                        return isCustom || modelVersion === '__custom__' ? (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <input className="inputField" value={modelVersion === '__custom__' ? '' : modelVersion}
                               onChange={(e) => setModelVersion(e.target.value)}
-                              placeholder={defaultModel ? `${defaultModel.value} (default)` : 'Enter model ID'}
-                              name="llm-model-version" autoComplete="one-time-code" data-1p-ignore data-lpignore="true" />
-                            <datalist id={listId}>
-                              {knownModels.map(m => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </datalist>
-                          </>
+                              placeholder={language === 'zh' ? '输入模型 ID，如 gpt-5.4' : 'Enter model ID, e.g. gpt-5.4'}
+                              name="llm-model-version" autoComplete="one-time-code" data-1p-ignore data-lpignore="true"
+                              style={{ flex: 1 }} />
+                            <button type="button" onClick={() => setModelVersion('')}
+                              style={{ padding: '4px 10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                              ← {language === 'zh' ? '列表' : 'List'}
+                            </button>
+                          </div>
+                        ) : (
+                          <select value={modelVersion} onChange={(e) => setModelVersion(e.target.value)} style={selectStyle}>
+                            <option value="">{defaultModel ? `${defaultModel.value} (${language === 'zh' ? '默认' : 'default'})` : ''}</option>
+                            {knownModels.filter(m => !m.isDefault).map(m => (
+                              <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                            <option value="__custom__">{language === 'zh' ? '— 自定义模型 —' : '— Custom model —'}</option>
+                          </select>
                         );
                       })()}
                     </div>
