@@ -95,32 +95,28 @@ After writing your prompt, click "Submit Task". The system will return a confirm
 
 ## 4. Model Selection
 
-Click "Model Selection" to expand the settings panel. The platform offers three model options:
+Click "Model Selection" to expand the settings panel. The platform offers two modes:
 
-### 4.1 Codex gpt-5.3-codex (Default)
-
-- **Cost**: Free, covered by the platform
-- **Limit**: 10 tasks per user per day
-- **Best for**: Everyday testing and quick validation
-
-### 4.2 Codex (gpt-5.3-codex)
+### 4.1 Codex (Default, Platform-Provided)
 
 - **Cost**: Free, covered by the platform
-- **Limit**: Shared daily quota across the entire platform, first come first served
-- **Quality**: Flagship coding model with higher success rates
-- **Optional**: If you have your own Codex Token, you can enter it to bypass the platform quota
-- **Best for**: Tasks requiring high simulation quality
+- **Limit**: 10 tasks per user per day (resets at UTC midnight)
+- **Available models**: gpt-5.3-codex (default, recommended), gpt-5.2-codex, gpt-5.2
+- **Codex Token** (optional): If you have your own ChatGPT Codex Token, enter it to bypass the platform quota
+- **Best for**: Most users, no extra configuration needed
 
-### 4.3 Bring Your Own Key (BYOK)
+### 4.2 Bring Your Own Key (BYOK)
 
 Use your own API key with no platform quota restrictions. The following LLM providers are supported:
 
 | Provider | Available Models | API Key Format |
 |----------|-----------------|----------------|
-| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-mini, o3, o4-mini | Starts with `sk-` |
-| **Anthropic** | claude-sonnet-4-5, claude-opus-4-6, claude-haiku-4-5 | Starts with `sk-ant-` |
-| **DeepSeek** | deepseek-chat (V3), deepseek-reasoner (R1) | Any format |
-| **Qwen (Tongyi)** | qwen-plus, qwen-turbo, qwen-max | Any format |
+| **OpenAI** | gpt-5.4, gpt-5-mini, gpt-4o, gpt-4o-mini, gpt-4.1, o3, o4-mini, etc. | Starts with `sk-` |
+| **Anthropic** | claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5 | Starts with `sk-ant-` |
+| **DeepSeek** | deepseek-chat (V3.2), deepseek-reasoner (R1) | Any format |
+| **Qwen (Tongyi)** | qwen-plus, qwen-turbo, qwen-max, qwen3.5-plus | Any format |
+
+You can also enter a custom model ID not in the list.
 
 > **Privacy**: Your API key is used only for the current task. The worker **immediately deletes it from the database** after reading it. It is never stored or shared with third parties.
 

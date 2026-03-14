@@ -95,32 +95,28 @@
 
 ## 4. 模型选择
 
-点击「模型选择」展开设置面板。平台提供三种模型选项：
+点击「模型选择」展开设置面板。平台提供两种模式：
 
-### 4.1 Codex gpt-5.3-codex（默认）
-
-- **费用**：平台承担，免费使用
-- **限制**：每人每天 10 次
-- **适合**：日常测试、快速验证
-
-### 4.2 Codex (gpt-5.3-codex)
+### 4.1 Codex（默认，平台提供）
 
 - **费用**：平台承担，免费使用
-- **限制**：全平台共享每日额度，先到先得
-- **质量**：旗舰级 coding 模型，成功率更高
-- **可选**：如果你有自己的 Codex Token，可以填入以不受平台额度限制
-- **适合**：对仿真质量要求高的任务
+- **限制**：每人每天 10 次（UTC 零点重置）
+- **可选模型**：gpt-5.3-codex（默认，推荐）、gpt-5.2-codex、gpt-5.2
+- **Codex Token**（可选）：如果你有自己的 ChatGPT Codex Token，可以填入以不受平台额度限制
+- **适合**：绝大多数用户，无需额外配置
 
-### 4.3 自带 API Key（BYOK）
+### 4.2 自带 API Key（BYOK）
 
 使用你自己的 API Key，不受平台额度限制。支持以下 LLM 提供商：
 
 | 提供商 | 可选模型 | API Key 格式 |
 |--------|---------|-------------|
-| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-mini, o3, o4-mini | 以 `sk-` 开头 |
-| **Anthropic** | claude-sonnet-4-5, claude-opus-4-6, claude-haiku-4-5 | 以 `sk-ant-` 开头 |
-| **DeepSeek** | deepseek-chat (V3), deepseek-reasoner (R1) | 任意格式 |
-| **通义千问** | qwen-plus, qwen-turbo, qwen-max | 任意格式 |
+| **OpenAI** | gpt-5.4, gpt-5-mini, gpt-4o, gpt-4o-mini, gpt-4.1, o3, o4-mini 等 | 以 `sk-` 开头 |
+| **Anthropic** | claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5 | 以 `sk-ant-` 开头 |
+| **DeepSeek** | deepseek-chat (V3.2), deepseek-reasoner (R1) | 任意格式 |
+| **通义千问** | qwen-plus, qwen-turbo, qwen-max, qwen3.5-plus | 任意格式 |
+
+也可以输入不在列表中的自定义模型 ID。
 
 > **隐私保障**：你的 API Key 仅用于当前任务。Worker 读取后会**立即从数据库中删除**，不会被存储或传给第三方。
 
