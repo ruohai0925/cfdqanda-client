@@ -1,6 +1,6 @@
 // Prompt examples curated from FoamGPT dataset (https://huggingface.co/datasets/LeoYML/FoamGPT)
 // Source: foamgpt_train.jsonl / foamgpt_test.jsonl — prompts are exact copies from the dataset
-// All examples use laminar solvers (no turbulence models) for higher success rate with gpt-5-mini
+// All examples avoid complex mesh descriptions (no multi-block vertices, no arc edges)
 
 const promptExamples = [
   {
@@ -28,28 +28,28 @@ const promptExamples = [
     prompt: "Do a laminar incompressible flow simulation using pisoFoam solver for a domain with porous blockage. The domain extends from x=-2 to x=6 and y=-2 to y=2 with a thin depth of 0.2 (-0.1<=z<=0.1) with convertToMeters=1. A porous blockage zone is defined as a box in the region -0.5<=x<=0.5, -0.5<=y<=0.5, -1<=z<=1 with Darcy coefficient D=1000 in all directions. Use a structured hex mesh with 64x32x1 cells and uniform grading. Set inlet velocity to uniform (1 0 0) m/s with zeroGradient pressure, outlet with fixedValue pressure of 0 and pressureInletOutletVelocity for velocity, symmetryPlane conditions for top and bottom boundaries, and empty type for front and back faces. The kinematic viscosity is set to 5e-3 m\u00B2/s. Run the simulation from t=0 to t=5s with a timestep of 0.05s and write results every 0.5s. Use PISO algorithm with 2 correctors and 0 non-orthogonal correctors. For pressure, use GAMG solver with GaussSeidel smoother (tolerance 1e-06, relTol 0.1 for p and 0 for pFinal), and for velocity use smoothSolver with GaussSeidel smoother (tolerance 1e-05, relTol 0).",
   },
   {
-    id: 'backstep',
-    label: { zh: '后台阶流动', en: 'Backward-Facing Step' },
+    id: 'elbow',
+    label: { zh: '弯管流动', en: 'Elbow Channel' },
     description: {
-      zh: '经典分离流：脉冲入口的后台阶层流，使用 pimpleFoam 瞬态求解',
-      en: 'Classic separation flow: pulsating inlet backward-facing step, transient laminar with pimpleFoam',
+      zh: '二维 L 形弯管双入口混合流，使用 icoFoam 求解不可压层流',
+      en: '2D L-shaped elbow channel with two inlets, laminar incompressible with icoFoam',
     },
-    tag: { zh: '分离流', en: 'Separation' },
-    solver: 'pimpleFoam',
+    tag: { zh: '管流', en: 'Pipe' },
+    solver: 'icoFoam',
     domain: 'incompressible',
-    prompt: "Do a laminar incompressible flow simulation using pimpleFoam solver for a backward-facing step geometry. The domain has dimensions (in raw units before scaling): inlet section from x=-20.6 to x=0 with height 25.4, main channel section from x=0 to x=206 with total height varying from 25.4 at top to -25.4 at bottom, and outlet section from x=206 to x=290 with height varying from 16.6 to -16.6, with thickness of 1 unit (-0.5 to 0.5 in z-direction). Note that convertToMeters=0.001. Use PIMPLE algorithm with 2 correctors and no non-orthogonal corrections. The inlet has a pulsating velocity profile defined by U=0.5*(1-cos(2\u03C0*min(x/0.3,1))) in x-direction, outlet has fixed pressure (p=0), upper and lower walls have no-slip condition, and front/back faces are empty. The mesh consists of 5 blocks with grading: inlet section (18x30x1), two middle sections (180x27x1 and 180x30x1), and two outlet sections (25x27x1 and 25x30x1). Set kinematic viscosity to 1e-4 m\u00B2/s. Run simulation from t=0 to t=0.3s with initial deltaT=0.001s, adjustable timestep with maxCo=5, and write results every 0.02s. Use GAMG solver for pressure with 1e-7 tolerance and smoothSolver for velocity with 1e-5 tolerance.",
+    prompt: "Perform an incompressible flow simulation in a 2D elbow-shaped channel using icoFoam solver. The domain has two inlets: one with a fixed velocity of (1 0 0) m/s and another with (0 3 0) m/s, and a pressure outlet with fixed value of 0. The walls (wall-4 and wall-8) have no-slip boundary conditions, and the front and back planes are set as empty for 2D simulation. Use PISO algorithm with 2 correctors and 2 non-orthogonal correctors. The kinematic viscosity is set to 0.01 m\u00B2/s. Run the simulation from t=0 to t=1 seconds with a timestep of 0.05s, writing results every 4 timesteps. For pressure solution, use PCG solver with DIC preconditioner (tolerance 1e-06, relTol 0.05), and for velocity, use smoothSolver with symGaussSeidel smoother (tolerance 1e-05). Initial conditions are zero velocity and pressure throughout the domain.",
   },
   {
-    id: 'cylinder',
-    label: { zh: '圆柱绕流', en: 'Flow Around Cylinder' },
+    id: 'backstep',
+    label: { zh: '后台阶湍流', en: 'Backward-Facing Step' },
     description: {
-      zh: '经典外流算例：偏心圆柱绕流，使用 pimpleFoam 层流瞬态求解',
-      en: 'Classic external flow: laminar flow around an offset cylinder, transient with pimpleFoam',
+      zh: '经典分离流：后台阶湍流，使用 pimpleFoam + k-epsilon 模型',
+      en: 'Classic separation flow: turbulent backward-facing step with pimpleFoam + k-epsilon',
     },
-    tag: { zh: '绕流', en: 'External' },
+    tag: { zh: '湍流', en: 'Turbulent' },
     solver: 'pimpleFoam',
     domain: 'incompressible',
-    prompt: "Conduct a laminar flow simulation around an offset cylinder using pimpleFoam solver. The domain consists of a 3D geometry with a cylindrical obstruction, where the domain extends from -5 to 5 units in x-direction and -1.5 to 2.5 units in y-direction, with a thickness of 2 units in z-direction (-1 to 1), with convertToMeters=1. The cylinder is positioned off-center with its outer radius being 1.4 units and inner radius of 1 unit. The boundary conditions include: inlet (left patch) with fixed velocity of (1 0 0) m/s and zero gradient pressure, outlet (right patch) with zero gradient velocity and fixed pressure of 0, no-slip conditions for the cylinder wall and up/down walls, and empty type for front and back faces. Use a structured mesh with 10x10 cells in most blocks and 10x5 cells in the lower blocks. Set kinematic viscosity (nu) to 0.01 m\u00B2/s. Run the simulation from t=0 to t=0.5 seconds with a timestep of 0.0025s and write results every 0.05s. Use PIMPLE algorithm with 5 outer correctors, 1 corrector, and no momentum predictor. The mesh is divided into 20 blocks with appropriate edge refinement around the cylinder using arc edges.",
+    prompt: "Do a Reynolds-Averaged Simulation (RAS) of turbulent flow in a backward-facing step channel using pimpleFoam solver. The geometry consists of a 2D channel with dimensions: inlet section (-20.6 to 0 in x, 0 to 25.4 in y), main channel section (0 to 206 in x) with sudden expansion from 25.4 to 50.8 in y at x=0, and outlet section (206 to 290 in x) with gradual contraction to 33.2 in y (convertToMeters=0.001). Use k-epsilon turbulence model with inlet conditions k=0.375 m\u00B2/s\u00B2 and epsilon=14.855 m\u00B2/s\u00B3. Specify inlet velocity as uniform 10 m/s in x-direction, zero pressure at outlet, and no-slip conditions on upper and lower walls. Set kinematic viscosity to 1e-05 m\u00B2/s. The mesh should have varying resolution with 18 cells in inlet section, 180 cells in main channel, and 25 cells in outlet section along x-direction, with graded distribution in y-direction (27-30 cells). Use PIMPLE algorithm with 2 correctors, maxCo=1, and local Euler time discretization. Run simulation from t=0 to t=100s with deltaT=1s and write results every 10s. The domain has a thickness of 1 unit (-0.5 to 0.5 in z-direction) with empty-type boundary condition on front and back faces for 2D simulation.",
   },
 ];
 
