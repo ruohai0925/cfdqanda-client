@@ -248,38 +248,36 @@ function getDaysUntilExpiry(sim) {
   return remaining;
 }
 
-// Known model versions per provider (sourced from Foam-Agent src/config.py + src/utils.py)
+// Known model versions per provider (updated 2026-03)
+// Users can also type any custom model ID not in this list
 const MODEL_VERSIONS = {
-  'openai-codex': [
-    { value: 'gpt-5.3-codex', label: 'gpt-5.3-codex', isDefault: true },
-    { value: 'o3', label: 'o3' },
-    { value: 'o4-mini', label: 'o4-mini' },
-    { value: 'gpt-4.1', label: 'gpt-4.1' },
-    { value: 'gpt-4o', label: 'gpt-4o' },
-    { value: 'gpt-4o-mini', label: 'gpt-4o-mini' },
-  ],
   'openai': [
-    { value: 'gpt-4o', label: 'gpt-4o', isDefault: true },
-    { value: 'gpt-4o-mini', label: 'gpt-4o-mini' },
+    { value: 'gpt-5.4', label: 'gpt-5.4 (flagship)' },
+    { value: 'gpt-5-mini', label: 'gpt-5-mini', isDefault: true },
+    { value: 'gpt-5-nano', label: 'gpt-5-nano (cheapest)' },
     { value: 'gpt-4.1', label: 'gpt-4.1' },
     { value: 'gpt-4.1-mini', label: 'gpt-4.1-mini' },
-    { value: 'gpt-5-mini', label: 'gpt-5-mini' },
-    { value: 'o3', label: 'o3' },
-    { value: 'o4-mini', label: 'o4-mini' },
+    { value: 'gpt-4o', label: 'gpt-4o' },
+    { value: 'gpt-4o-mini', label: 'gpt-4o-mini' },
+    { value: 'o3', label: 'o3 (reasoning)' },
+    { value: 'o3-pro', label: 'o3-pro (strongest reasoning)' },
+    { value: 'o4-mini', label: 'o4-mini (fast reasoning)' },
   ],
   'anthropic': [
-    { value: 'claude-sonnet-4-5-20250929', label: 'claude-sonnet-4-5-20250929', isDefault: true },
-    { value: 'claude-opus-4-6', label: 'claude-opus-4-6' },
-    { value: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5-20251001' },
+    { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6 (recommended)', isDefault: true },
+    { value: 'claude-opus-4-6', label: 'claude-opus-4-6 (most capable)' },
+    { value: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5 (fastest/cheapest)' },
+    { value: 'claude-sonnet-4-5-20250929', label: 'claude-sonnet-4-5' },
   ],
   'deepseek': [
-    { value: 'deepseek-chat', label: 'deepseek-chat (V3)', isDefault: true },
+    { value: 'deepseek-chat', label: 'deepseek-chat (V3.2)', isDefault: true },
     { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)' },
   ],
   'qwen': [
-    { value: 'qwen-plus', label: 'qwen-plus', isDefault: true },
-    { value: 'qwen-turbo', label: 'qwen-turbo' },
-    { value: 'qwen-max', label: 'qwen-max' },
+    { value: 'qwen-plus', label: 'qwen-plus (recommended)', isDefault: true },
+    { value: 'qwen-turbo', label: 'qwen-turbo (fast)' },
+    { value: 'qwen-max', label: 'qwen-max (strongest)' },
+    { value: 'qwen3.5-plus', label: 'qwen3.5-plus (latest)' },
   ],
 };
 
@@ -877,14 +875,19 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       {(() => {
                         const knownModels = MODEL_VERSIONS[modelProvider] || [];
                         const defaultModel = knownModels.find(m => m.isDefault);
+                        const listId = `models-${modelProvider}`;
                         return (
-                          <select className="inputField" value={modelVersion}
-                            onChange={(e) => setModelVersion(e.target.value)}>
-                            <option value="">{defaultModel ? `${defaultModel.value} (default)` : ''}</option>
-                            {knownModels.filter(m => !m.isDefault).map(m => (
-                              <option key={m.value} value={m.value}>{m.label}</option>
-                            ))}
-                          </select>
+                          <>
+                            <input className="inputField" list={listId} value={modelVersion}
+                              onChange={(e) => setModelVersion(e.target.value)}
+                              placeholder={defaultModel ? `${defaultModel.value} (default)` : 'Enter model ID'}
+                              autoComplete="off" />
+                            <datalist id={listId}>
+                              {knownModels.map(m => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                              ))}
+                            </datalist>
+                          </>
                         );
                       })()}
                     </div>
