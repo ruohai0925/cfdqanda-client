@@ -822,7 +822,8 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                     </label>
                     <input type="password" className="inputField" value={codexToken}
                       onChange={(e) => setCodexToken(e.target.value)}
-                      placeholder={t.codexTokenPlaceholder} autoComplete="off"
+                      placeholder={t.codexTokenPlaceholder}
+                      name="codex-oauth-token" autoComplete="one-time-code" data-1p-ignore data-lpignore="true"
                       style={{ marginBottom: '4px' }} />
                     <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.codexTokenHint}</small>
                   </div>
@@ -881,7 +882,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                             <input className="inputField" list={listId} value={modelVersion}
                               onChange={(e) => setModelVersion(e.target.value)}
                               placeholder={defaultModel ? `${defaultModel.value} (default)` : 'Enter model ID'}
-                              autoComplete="off" />
+                              name="llm-model-version" autoComplete="one-time-code" data-1p-ignore data-lpignore="true" />
                             <datalist id={listId}>
                               {knownModels.map(m => (
                                 <option key={m.value} value={m.value}>{m.label}</option>
@@ -905,7 +906,8 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           modelProvider === 'deepseek' ? 'sk-...' :
                           'sk-...'
                         }
-                        autoComplete="off" style={{ marginBottom: '4px' }} />
+                        name="llm-api-key" autoComplete="one-time-code" data-1p-ignore data-lpignore="true"
+                        style={{ marginBottom: '4px' }} />
                       <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.apiKeyHint}</small>
                     </div>
                   </div>
