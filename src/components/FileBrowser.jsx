@@ -137,7 +137,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
               }
             });
           }
-        } catch (e) {
+        } catch {
           // Non-critical — just won't show markers
         }
       }
@@ -320,7 +320,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
           const text = await data.text();
           setFeedbackContent(text);
         }
-      } catch (e) {
+      } catch {
         // Non-critical — user can still write new feedback
       }
     }

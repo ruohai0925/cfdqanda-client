@@ -117,7 +117,7 @@ Use your own API key with no platform quota restrictions. The following LLM prov
 
 | Provider | Available Models | API Key Format |
 |----------|-----------------|----------------|
-| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-nano, o3, o4-mini, gpt-5-mini | Starts with `sk-` |
+| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-mini, o3, o4-mini, gpt-5-mini | Starts with `sk-` |
 | **Anthropic** | claude-sonnet-4-5, claude-opus-4-6, claude-haiku-4-5 | Starts with `sk-ant-` |
 | **DeepSeek** | deepseek-chat (V3), deepseek-reasoner (R1) | Any format |
 | **Qwen (Tongyi)** | qwen-plus, qwen-turbo, qwen-max | Any format |

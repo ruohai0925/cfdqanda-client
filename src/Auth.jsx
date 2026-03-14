@@ -177,7 +177,7 @@ export default function Auth({ language, setLanguage }) {
         signUpOptions.captchaToken = captchaToken;
       }
 
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: signUpOptions,

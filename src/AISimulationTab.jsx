@@ -41,8 +41,10 @@ const strings = {
     modelVersion: '模型版本',
     apiKey: 'API Key',
     apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
-    modelChoiceDefault: 'GPT-5-nano',
+    modelChoiceDefault: 'GPT-5-mini',
     modelChoiceDefaultDesc: '平台提供 · 每人每天 {limit} 次',
+    dailyUsage: '今日已用 {used}/{limit} 次',
+    dailyUsageExhausted: '今日额度已用完，请明天再试或使用 BYOK',
     modelChoiceCodex: 'Codex (gpt-5.3-codex)',
     modelChoiceCodexDesc: '平台提供 · 共享每日额度，先到先得',
     modelChoiceBYOK: '自带 API Key (BYOK)',
@@ -150,8 +152,10 @@ const strings = {
     modelVersion: 'Model Version',
     apiKey: 'API Key',
     apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
-    modelChoiceDefault: 'GPT-5-nano',
+    modelChoiceDefault: 'GPT-5-mini',
     modelChoiceDefaultDesc: 'Platform-provided · {limit} tasks/day per user',
+    dailyUsage: 'Used {used}/{limit} today',
+    dailyUsageExhausted: 'Daily quota exhausted. Try again tomorrow or use BYOK.',
     modelChoiceCodex: 'Codex (gpt-5.3-codex)',
     modelChoiceCodexDesc: 'Platform-provided · Shared daily quota, first come first served',
     modelChoiceBYOK: 'Bring Your Own Key (BYOK)',
@@ -263,7 +267,7 @@ const MODEL_VERSIONS = {
     { value: 'gpt-4o-mini', label: 'gpt-4o-mini' },
     { value: 'gpt-4.1', label: 'gpt-4.1' },
     { value: 'gpt-4.1-mini', label: 'gpt-4.1-mini' },
-    { value: 'gpt-5-nano', label: 'gpt-5-nano' },
+    { value: 'gpt-5-mini', label: 'gpt-5-mini' },
     { value: 'o3', label: 'o3' },
     { value: 'o4-mini', label: 'o4-mini' },
     { value: 'gpt-5-mini', label: 'gpt-5-mini' },
@@ -303,7 +307,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [solverBackend, setSolverBackend] = useState('openfoam-v10');
 
   // Model settings state
-  // modelChoice: 'default' (gpt-5-nano), 'codex' (gpt-5.3-codex), 'byok' (bring your own key)
+  // modelChoice: 'default' (gpt-5-mini), 'codex' (gpt-5.3-codex), 'byok' (bring your own key)
   const [showModelSettings, setShowModelSettings] = useState(false);
   const [modelChoice, setModelChoice] = useState('default');
   const [modelProvider, setModelProvider] = useState('openai');
@@ -321,6 +325,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [checkpointActionJobs, setCheckpointActionJobs] = useState(new Set());
 
   const [cancellingJobs, setCancellingJobs] = useState(new Set());
+
+  // Daily usage state (used/limit/remaining)
+  const [dailyUsage, setDailyUsage] = useState(null);
 
   // Queue info state (for showing position + elapsed time on queued tasks)
   const [queueInfo, setQueueInfo] = useState(null);
@@ -356,6 +363,19 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       if (s.preRunEndTime !== undefined) setPreRunEndTime(s.preRunEndTime);
     } catch { /* ignore corrupted localStorage */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch daily usage on mount and after each submission
+  const fetchDailyUsage = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/user/daily-usage`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      if (res.ok) setDailyUsage(await res.json());
+    } catch { /* ignore network errors */ }
+  };
+  useEffect(() => {
+    fetchDailyUsage();
+  }, [simulations.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Queue status polling — only active when there are queued tasks
   useEffect(() => {
@@ -623,6 +643,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       return;
     }
 
+    // Pre-check daily quota for platform-provided models (default + codex)
+    if (modelChoice !== 'byok' && dailyUsage && dailyUsage.remaining <= 0) {
+      toast.error(t.dailyUsageExhausted);
+      return;
+    }
+
     // Validate credentials for BYOK mode
     if (modelChoice === 'byok') {
       if (!apiKey.trim()) {
@@ -665,7 +691,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         if (baseUrl) llmConfig.base_url = baseUrl;
         requestBody.llm_config = llmConfig;
       }
-      // modelChoice === 'default': send NO llm_config → worker uses openai/gpt-5-nano
+      // modelChoice === 'default': send NO llm_config → worker uses openai/gpt-5-mini
       // Pre-run end time
       if (showPreRunSettings && preRunEndTime !== '') {
         requestBody.pre_run_end_time = parseInt(preRunEndTime, 10);
@@ -692,6 +718,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       }
       setNewPrompt('');
       setApiKey('');
+      fetchDailyUsage();  // refresh remaining count
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -772,7 +799,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
             {showModelSettings && (
               <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {/* Option 1: GPT-5-nano (default) */}
+                {/* Option 1: GPT-5-mini (default) */}
                 <label style={{
                   display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
                   border: `1.5px solid ${modelChoice === 'default' ? 'var(--accent)' : 'var(--border)'}`,
@@ -785,7 +812,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceDefault}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      {t.modelChoiceDefaultDesc.replace('{limit}', '10')}
+                      {t.modelChoiceDefaultDesc.replace('{limit}', dailyUsage ? String(dailyUsage.limit) : '5')}
                     </div>
                   </div>
                 </label>
@@ -1030,7 +1057,15 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             </div>
           </div>
 
-          <button className="button-block" type="submit" disabled={loading || !newPrompt.trim()}>
+          {dailyUsage && modelChoice !== 'byok' && (
+            <div style={{
+              fontSize: '0.78rem', textAlign: 'center', marginBottom: '6px',
+              color: dailyUsage.remaining <= 0 ? 'var(--danger)' : dailyUsage.remaining <= 2 ? 'var(--warning)' : 'var(--text-secondary)',
+            }}>
+              {t.dailyUsage.replace('{used}', String(dailyUsage.used)).replace('{limit}', String(dailyUsage.limit))}
+            </div>
+          )}
+          <button className="button-block" type="submit" disabled={loading || !newPrompt.trim() || (modelChoice !== 'byok' && dailyUsage && dailyUsage.remaining <= 0)}>
             {loading ? t.submittingButton : t.submitButton}
           </button>
           </form>

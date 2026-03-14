@@ -114,7 +114,7 @@ const DEFAULT_MEETING_SLOT = () => ({
   endTime: '10:00',
 });
 
-export default function ExpertOrderTab({ session, language }) {
+export default function ExpertOrderTab({ language }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedSoftware, setSelectedSoftware] = useState([]);

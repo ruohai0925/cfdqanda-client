@@ -117,7 +117,7 @@
 
 | 提供商 | 可选模型 | API Key 格式 |
 |--------|---------|-------------|
-| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-nano, o3, o4-mini, gpt-5-mini | 以 `sk-` 开头 |
+| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-mini, o3, o4-mini, gpt-5-mini | 以 `sk-` 开头 |
 | **Anthropic** | claude-sonnet-4-5, claude-opus-4-6, claude-haiku-4-5 | 以 `sk-ant-` 开头 |
 | **DeepSeek** | deepseek-chat (V3), deepseek-reasoner (R1) | 任意格式 |
 | **通义千问** | qwen-plus, qwen-turbo, qwen-max | 任意格式 |
