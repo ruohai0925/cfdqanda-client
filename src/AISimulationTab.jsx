@@ -305,6 +305,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [modelChoice, setModelChoice] = useState('default');
   const [modelProvider, setModelProvider] = useState('openai');
   const [modelVersion, setModelVersion] = useState('');
+  const [codexModel, setCodexModel] = useState('');  // '' = default (gpt-5.3-codex)
   const [apiKey, setApiKey] = useState('');
   const [codexToken, setCodexToken] = useState('');
 
@@ -334,7 +335,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
   const saveUserSettings = () => {
     const settings = {
-      modelChoice, modelProvider, modelVersion, solverBackend,
+      modelChoice, codexModel, modelProvider, modelVersion, solverBackend,
       pipelineMode, selectedCheckpoints, preRunEndTime,
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -349,6 +350,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       const s = JSON.parse(saved);
       if (s.modelChoice) setModelChoice(s.modelChoice);
       if (s.modelProvider) setModelProvider(s.modelProvider);
+      if (s.codexModel !== undefined) setCodexModel(s.codexModel);
       if (s.modelVersion !== undefined) setModelVersion(s.modelVersion);
       if (s.solverBackend) setSolverBackend(s.solverBackend);
       if (s.pipelineMode) setPipelineMode(s.pipelineMode);
@@ -668,13 +670,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         requestBody.solver_backend = solverBackend;
       }
       // Build llm_config based on model choice
-      if (modelChoice === 'default' && codexToken) {
-        // User provided their own Codex token → bypass platform quota
-        requestBody.llm_config = {
-          model_provider: 'openai-codex',
-          model_version: 'gpt-5.3-codex',
-          codex_token: codexToken,
-        };
+      if (modelChoice === 'default' && (codexToken || codexModel)) {
+        // User selected non-default Codex model or provided own token
+        const llmConfig = { model_provider: 'openai-codex' };
+        if (codexModel) llmConfig.model_version = codexModel;
+        if (codexToken) llmConfig.codex_token = codexToken;
+        requestBody.llm_config = llmConfig;
       } else if (modelChoice === 'byok') {
         // BYOK: send user's provider + model + API key
         const llmConfig = {};
@@ -814,18 +815,33 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   </div>
                 </label>
 
-                {/* Codex: optional own token (bypass platform quota) */}
+                {/* Codex: model selector + optional own token */}
                 {modelChoice === 'default' && (
-                  <div style={{ marginLeft: '28px', marginBottom: '2px' }}>
-                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
-                      {t.codexTokenLabel}
-                    </label>
-                    <input type="password" className="inputField" value={codexToken}
-                      onChange={(e) => setCodexToken(e.target.value)}
-                      placeholder={t.codexTokenPlaceholder}
-                      name="codex-oauth-token" autoComplete="one-time-code" data-1p-ignore data-lpignore="true"
-                      style={{ marginBottom: '4px' }} />
-                    <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.codexTokenHint}</small>
+                  <div style={{ marginLeft: '28px', marginBottom: '2px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* Codex model selector */}
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
+                        {language === 'zh' ? '模型版本' : 'Model Version'}
+                      </label>
+                      <select value={codexModel} onChange={(e) => setCodexModel(e.target.value)}
+                        style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
+                        <option value="">gpt-5.3-codex ({language === 'zh' ? '默认，推荐' : 'default, recommended'})</option>
+                        <option value="gpt-5.2-codex">gpt-5.2-codex</option>
+                        <option value="gpt-5.2">gpt-5.2</option>
+                      </select>
+                    </div>
+                    {/* Optional Codex token */}
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
+                        {t.codexTokenLabel}
+                      </label>
+                      <input type="password" className="inputField" value={codexToken}
+                        onChange={(e) => setCodexToken(e.target.value)}
+                        placeholder={t.codexTokenPlaceholder}
+                        name="codex-oauth-token" autoComplete="one-time-code" data-1p-ignore data-lpignore="true"
+                        style={{ marginBottom: '4px' }} />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.codexTokenHint}</small>
+                    </div>
                   </div>
                 )}
 
