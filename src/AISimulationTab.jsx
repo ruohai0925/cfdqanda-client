@@ -809,7 +809,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceDefault}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      {t.modelChoiceDefaultDesc.replace('{limit}', dailyUsage ? String(dailyUsage.limit) : '5')}
+                      {dailyUsage?.exempt
+                        ? (language === 'zh' ? '平台提供 · 管理员无限额' : 'Platform-provided · Admin unlimited')
+                        : t.modelChoiceDefaultDesc.replace('{limit}', dailyUsage ? String(dailyUsage.limit) : '5')}
                     </div>
                   </div>
                 </label>
@@ -1038,7 +1040,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             </div>
           </div>
 
-          {dailyUsage && modelChoice !== 'byok' && (
+          {dailyUsage && modelChoice !== 'byok' && !dailyUsage.exempt && (
             <div style={{
               fontSize: '0.78rem', textAlign: 'center', marginBottom: '6px',
               color: dailyUsage.remaining <= 0 ? 'var(--danger)' : dailyUsage.remaining <= 2 ? 'var(--warning)' : 'var(--text-secondary)',
