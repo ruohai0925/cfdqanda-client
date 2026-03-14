@@ -41,12 +41,10 @@ const strings = {
     modelVersion: '模型版本',
     apiKey: 'API Key',
     apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
-    modelChoiceDefault: 'GPT-5-mini',
+    modelChoiceDefault: 'Codex (gpt-5.3-codex)',
     modelChoiceDefaultDesc: '平台提供 · 每人每天 {limit} 次',
     dailyUsage: '今日已用 {used}/{limit} 次',
     dailyUsageExhausted: '今日额度已用完，请明天再试或使用 BYOK',
-    modelChoiceCodex: 'Codex (gpt-5.3-codex)',
-    modelChoiceCodexDesc: '平台提供 · 共享每日额度，先到先得',
     modelChoiceBYOK: '自带 API Key (BYOK)',
     modelChoiceBYOKDesc: '使用自己的 API Key，不受平台额度限制',
     promptRequired: '请输入仿真需求！',
@@ -152,12 +150,10 @@ const strings = {
     modelVersion: 'Model Version',
     apiKey: 'API Key',
     apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
-    modelChoiceDefault: 'GPT-5-mini',
+    modelChoiceDefault: 'Codex (gpt-5.3-codex)',
     modelChoiceDefaultDesc: 'Platform-provided · {limit} tasks/day per user',
     dailyUsage: 'Used {used}/{limit} today',
     dailyUsageExhausted: 'Daily quota exhausted. Try again tomorrow or use BYOK.',
-    modelChoiceCodex: 'Codex (gpt-5.3-codex)',
-    modelChoiceCodexDesc: 'Platform-provided · Shared daily quota, first come first served',
     modelChoiceBYOK: 'Bring Your Own Key (BYOK)',
     modelChoiceBYOKDesc: 'Use your own API key, no platform quota limits',
     promptRequired: 'Please enter your simulation requirements!',
@@ -270,7 +266,6 @@ const MODEL_VERSIONS = {
     { value: 'gpt-5-mini', label: 'gpt-5-mini' },
     { value: 'o3', label: 'o3' },
     { value: 'o4-mini', label: 'o4-mini' },
-    { value: 'gpt-5-mini', label: 'gpt-5-mini' },
   ],
   'anthropic': [
     { value: 'claude-sonnet-4-5-20250929', label: 'claude-sonnet-4-5-20250929', isDefault: true },
@@ -307,7 +302,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [solverBackend, setSolverBackend] = useState('openfoam-v10');
 
   // Model settings state
-  // modelChoice: 'default' (gpt-5-mini), 'codex' (gpt-5.3-codex), 'byok' (bring your own key)
+  // modelChoice: 'default' (openai-codex/gpt-5.3-codex), 'byok' (bring your own key)
   const [showModelSettings, setShowModelSettings] = useState(false);
   const [modelChoice, setModelChoice] = useState('default');
   const [modelProvider, setModelProvider] = useState('openai');
@@ -675,11 +670,13 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         requestBody.solver_backend = solverBackend;
       }
       // Build llm_config based on model choice
-      if (modelChoice === 'codex') {
-        // Platform-provided Codex: send provider+model, no key (worker uses server auth)
-        const llmConfig = { model_provider: 'openai-codex', model_version: 'gpt-5.3-codex' };
-        if (codexToken) llmConfig.codex_token = codexToken;  // optional: user's own token
-        requestBody.llm_config = llmConfig;
+      if (modelChoice === 'default' && codexToken) {
+        // User provided their own Codex token → bypass platform quota
+        requestBody.llm_config = {
+          model_provider: 'openai-codex',
+          model_version: 'gpt-5.3-codex',
+          codex_token: codexToken,
+        };
       } else if (modelChoice === 'byok') {
         // BYOK: send user's provider + model + API key
         const llmConfig = {};
@@ -691,7 +688,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         if (baseUrl) llmConfig.base_url = baseUrl;
         requestBody.llm_config = llmConfig;
       }
-      // modelChoice === 'default': send NO llm_config → worker uses openai/gpt-5-mini
+      // modelChoice === 'default': send NO llm_config → worker uses openai-codex/gpt-5.3-codex
       // Pre-run end time
       if (showPreRunSettings && preRunEndTime !== '') {
         requestBody.pre_run_end_time = parseInt(preRunEndTime, 10);
@@ -799,7 +796,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
             {showModelSettings && (
               <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {/* Option 1: GPT-5-mini (default) */}
+                {/* Option 1: Codex (platform default) */}
                 <label style={{
                   display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
                   border: `1.5px solid ${modelChoice === 'default' ? 'var(--accent)' : 'var(--border)'}`,
@@ -807,7 +804,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   background: modelChoice === 'default' ? 'var(--bg-tertiary)' : 'transparent',
                 }}>
                   <input type="radio" name="modelChoice" value="default" checked={modelChoice === 'default'}
-                    onChange={() => { setModelChoice('default'); setApiKey(''); setCodexToken(''); }}
+                    onChange={() => { setModelChoice('default'); setApiKey(''); }}
                     style={{ marginTop: '2px' }} />
                   <div>
                     <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceDefault}</div>
@@ -817,24 +814,8 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   </div>
                 </label>
 
-                {/* Option 2: Codex (shared quota) */}
-                <label style={{
-                  display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
-                  border: `1.5px solid ${modelChoice === 'codex' ? 'var(--accent)' : 'var(--border)'}`,
-                  borderRadius: '6px', cursor: 'pointer',
-                  background: modelChoice === 'codex' ? 'var(--bg-tertiary)' : 'transparent',
-                }}>
-                  <input type="radio" name="modelChoice" value="codex" checked={modelChoice === 'codex'}
-                    onChange={() => { setModelChoice('codex'); setApiKey(''); setCodexToken(''); }}
-                    style={{ marginTop: '2px' }} />
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceCodex}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t.modelChoiceCodexDesc}</div>
-                  </div>
-                </label>
-
-                {/* Codex: optional own token */}
-                {modelChoice === 'codex' && (
+                {/* Codex: optional own token (bypass platform quota) */}
+                {modelChoice === 'default' && (
                   <div style={{ marginLeft: '28px', marginBottom: '2px' }}>
                     <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
                       {t.codexTokenLabel}
@@ -847,7 +828,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   </div>
                 )}
 
-                {/* Option 3: BYOK */}
+                {/* Option 2: BYOK */}
                 <label style={{
                   display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
                   border: `1.5px solid ${modelChoice === 'byok' ? 'var(--accent)' : 'var(--border)'}`,

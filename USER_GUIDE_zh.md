@@ -97,7 +97,7 @@
 
 点击「模型选择」展开设置面板。平台提供三种模型选项：
 
-### 4.1 GPT-5-nano（默认）
+### 4.1 Codex gpt-5.3-codex（默认）
 
 - **费用**：平台承担，免费使用
 - **限制**：每人每天 10 次
@@ -117,7 +117,7 @@
 
 | 提供商 | 可选模型 | API Key 格式 |
 |--------|---------|-------------|
-| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-mini, o3, o4-mini, gpt-5-mini | 以 `sk-` 开头 |
+| **OpenAI** | gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini, gpt-5-mini, o3, o4-mini | 以 `sk-` 开头 |
 | **Anthropic** | claude-sonnet-4-5, claude-opus-4-6, claude-haiku-4-5 | 以 `sk-ant-` 开头 |
 | **DeepSeek** | deepseek-chat (V3), deepseek-reasoner (R1) | 任意格式 |
 | **通义千问** | qwen-plus, qwen-turbo, qwen-max | 任意格式 |
@@ -295,7 +295,7 @@
 
 | 模型 | 费用 | 限制 |
 |------|------|------|
-| GPT-5-nano | 免费 | 每人每天 10 次 |
+| Codex (gpt-5.3-codex) | 免费 | 每人每天 5 次 |
 | Codex (gpt-5.3-codex) | 免费 | 全平台共享额度 |
 
 BYOK 模式下的模型费用由用户自行承担。
