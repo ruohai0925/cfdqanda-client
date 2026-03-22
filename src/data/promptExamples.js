@@ -51,6 +51,18 @@ const promptExamples = [
     domain: 'heatTransfer',
     prompt: "Perform a buoyant thermal flow simulation using buoyantFoam solver in a rectangular room of dimensions 10x5x10 (convertToMeters=1). Use k-epsilon RAS turbulence model with PIMPLE algorithm (2 correctors, 1 outer corrector). The domain has three boundary types: floor, ceiling, and fixedWalls, all with no-slip velocity conditions and wall functions for k, epsilon, and thermal diffusivity (alphat). Initial conditions: temperature of 300K throughout the domain except for a hot spot of 600K in the region 4.5<=x<=5.5, 4.5<=z<=5.5 near the floor (y~0), pressure of 1e5 Pa, zero initial velocity. Physical properties: air with molecular weight 28.9 kg/kmol, specific heat capacity (Cp) of 1000 J/kgK, dynamic viscosity of 1.8e-05 kg/ms, Prandtl number of 0.7, using perfectGas equation of state. Gravity acts in negative y-direction (-9.81 m\u00B2/s). Mesh consists of 20x10x20 cells with uniform grading. Run simulation from t=0 to t=100s with fixed timestep of 2s and write results every 10 timesteps. Floor and ceiling have fixed temperature of 300K, while fixedWalls have zeroGradient temperature condition.",
   },
+  {
+    id: 'tandemWing',
+    label: { zh: '串列翼（需上传 .msh）', en: 'Tandem Wing (.msh required)' },
+    description: {
+      zh: '外部网格算例：使用上传的 .msh 文件进行三维翼型绕流仿真，SA 湍流模型 + simpleFoam',
+      en: 'Custom mesh case: 3D flow over tandem wings with uploaded .msh file, SA turbulence + simpleFoam',
+    },
+    tag: { zh: '外部网格', en: 'Custom Mesh' },
+    solver: 'simpleFoam',
+    domain: 'incompressible',
+    prompt: 'Do an incompressible 3D incompressible flow over a tandem wing configuration. The mesh is provided as a .msh file. The msh file contains 4 boundaries named "inlet", "outlet", "walls", "airfoil" and "frontAndBack". The "inlet" and "outlet" are of type freestream with the freestream velocity being 9 m/s. The "walls" and "airfoil" have a no-slip boundary condition (velocity equal to zero at the wall). The "frontAndBack" faces are also of type wall. The simulation runs from time 0 to 10 with a time step of 1.0 units, and results are output every 1 time steps. The viscosity (`nu`) is set as constant with a value of 1.5e-05 m\u00B2/s. Use simpleFoam solver. Use SpalartAllmaras turbulence model. Further visualize the magnitude of velocity along the mid Z section at the final time.',
+  },
 ];
 
 export default promptExamples;

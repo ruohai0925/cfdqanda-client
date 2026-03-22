@@ -125,7 +125,11 @@ const strings = {
     expiresInDays: '{days} 天后自动删除',
     expiresToday: '今天将自动删除',
     saveSettings: '保存设置',
+    saveModelSettings: '保存模型设置',
+    saveExecutionSettings: '保存执行设置',
     settingsSaved: '设置已保存',
+    modelSettingsSaved: '模型设置已保存',
+    executionSettingsSaved: '执行设置已保存',
     settingsLoaded: '已加载上次保存的设置',
   },
   en: {
@@ -246,7 +250,11 @@ const strings = {
     expiresInDays: 'Auto-deletes in {days}d',
     expiresToday: 'Auto-deletes today',
     saveSettings: 'Save Settings',
+    saveModelSettings: 'Save Model Settings',
+    saveExecutionSettings: 'Save Execution Settings',
     settingsSaved: 'Settings saved',
+    modelSettingsSaved: 'Model settings saved',
+    executionSettingsSaved: 'Execution settings saved',
     settingsLoaded: 'Loaded saved settings',
   }
 };
@@ -362,10 +370,24 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const saveUserSettings = () => {
     const settings = {
       modelChoice, codexModel, modelProvider, modelVersion, solverBackend,
-      pipelineMode, selectedCheckpoints, preRunEndTime,
+      pipelineMode, selectedCheckpoints, preRunEndTime, timeoutMinutes,
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     toast.success(t.settingsSaved);
+  };
+
+  const saveModelSettings = () => {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    Object.assign(saved, { modelChoice, codexModel, modelProvider, modelVersion, solverBackend });
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(saved));
+    toast.success(t.modelSettingsSaved);
+  };
+
+  const saveExecutionSettings = () => {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    Object.assign(saved, { pipelineMode, selectedCheckpoints, preRunEndTime, timeoutMinutes });
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(saved));
+    toast.success(t.executionSettingsSaved);
   };
 
   // Load saved settings on mount (once)
@@ -382,6 +404,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       if (s.pipelineMode) setPipelineMode(s.pipelineMode);
       if (s.selectedCheckpoints) setSelectedCheckpoints(s.selectedCheckpoints);
       if (s.preRunEndTime !== undefined) setPreRunEndTime(s.preRunEndTime);
+      if (s.timeoutMinutes !== undefined) setTimeoutMinutes(s.timeoutMinutes);
     } catch { /* ignore corrupted localStorage */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -701,6 +724,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
           .upload(meshStoragePath, meshFile, { contentType: 'application/octet-stream', upsert: false });
         toast.dismiss('mesh-upload');
         if (uploadError) throw new Error(t.meshUploadFailed + ': ' + uploadError.message);
+        toast.success(`${meshFile.name} (${(meshFile.size / 1024 / 1024).toFixed(1)} MB)`, { icon: '✓' });
         meshFileInfo = {
           storage_path: meshStoragePath,
           original_name: meshFile.name,
@@ -989,6 +1013,17 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                     </div>
                   </div>
                 )}
+                <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                  <button type="button" onClick={saveModelSettings}
+                    style={{
+                      padding: '4px 14px', fontSize: '0.78rem',
+                      background: 'var(--bg-tertiary)', color: 'var(--text-secondary)',
+                      border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                    }}>
+                    {t.saveModelSettings}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1090,24 +1125,21 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   <option value="60">60 min</option>
                   <option value="120">120 min</option>
                 </select>
+
+                <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                  <button type="button" onClick={saveExecutionSettings}
+                    style={{
+                      padding: '4px 14px', fontSize: '0.78rem',
+                      background: 'var(--bg-tertiary)', color: 'var(--text-secondary)',
+                      border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                    }}>
+                    {t.saveExecutionSettings}
+                  </button>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Save settings button — visible when any settings panel is open */}
-          {(showModelSettings || showPreRunSettings) && (
-            <div style={{ textAlign: 'right', margin: '4px 0 8px' }}>
-              <button type="button" onClick={saveUserSettings}
-                style={{
-                  padding: '4px 14px', fontSize: '0.78rem',
-                  background: 'var(--bg-tertiary)', color: 'var(--text-secondary)',
-                  border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer',
-                }}>
-                {t.saveSettings}
-              </button>
-            </div>
-          )}
 
           {/* Mesh file upload — styled like model settings toggle */}
           <div style={{ margin: '8px 0' }}>
@@ -1155,9 +1187,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                 display: 'flex', alignItems: 'center', gap: '8px',
                 marginTop: '6px', fontSize: '0.85rem',
                 padding: '6px 10px', background: 'var(--bg-tertiary)',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: 'var(--radius-md)', border: '1px solid var(--accent)',
               }}>
-                <span style={{ color: 'var(--accent)' }}>▶</span>
+                <span style={{ color: 'var(--success, #22c55e)' }}>&#10003;</span>
                 <span>{meshFile.name}</span>
                 <span style={{ color: 'var(--text-muted)' }}>
                   ({(meshFile.size / (1024 * 1024)).toFixed(1)} MB)
