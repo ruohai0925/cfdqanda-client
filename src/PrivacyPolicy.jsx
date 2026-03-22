@@ -222,16 +222,38 @@ If you violate the license terms, you have 32 days from written notice to come i
   },
 };
 
+const downloadStrings = {
+  zh: '下载 Markdown',
+  en: 'Download Markdown',
+};
+
 export default function PrivacyPolicy({ language, onBack }) {
   const t = strings[language];
+
+  const downloadMd = () => {
+    const md = `# ${t.title}\n\n*${t.lastUpdated}*\n\n` +
+      t.sections.map(s => `## ${s.heading}\n\n${s.content}`).join('\n\n---\n\n');
+    const filename = language === 'zh' ? 'PRIVACY_POLICY_zh.md' : 'PRIVACY_POLICY_en.md';
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
 
   return (
     <div className="privacy-policy">
       <div className="privacy-header">
         <h1>{t.title}</h1>
-        <button className="button-block button-outline" style={{ width: 'auto' }} onClick={onBack}>
-          {t.backButton}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="button-block button-outline" style={{ width: 'auto' }} onClick={onBack}>
+            {t.backButton}
+          </button>
+          <button className="button-block button-outline" style={{ width: 'auto' }} onClick={downloadMd}>
+            {downloadStrings[language]}
+          </button>
+        </div>
       </div>
       <p className="privacy-updated">{t.lastUpdated}</p>
 

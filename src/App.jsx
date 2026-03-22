@@ -38,7 +38,10 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash
-      setCurrentPage(hash === '#privacy' ? 'privacy' : hash === '#guide' ? 'guide' : 'main')
+      if (hash === '#privacy') setCurrentPage('privacy')
+      else if (hash === '#guide') setCurrentPage('guide')
+      else if (hash === '' || hash === '#') setCurrentPage('main')
+      // Ignore other hashes (e.g. #1-注册与登录) — these are in-page anchor links
     }
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
