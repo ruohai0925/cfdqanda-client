@@ -66,6 +66,13 @@ const strings = {
     taskCancelledToast: '任务已取消',
     cancelFailedToast: '取消失败',
     examplesTitle: '示例 Prompt（点击填入）',
+    meshUploadLabel: '上传网格文件（可选）',
+    meshUploadHint: '支持 Gmsh .msh 格式，最大 100 MB',
+    meshUploadInvalidType: '仅支持 .msh 文件',
+    meshUploadTooLarge: '文件不能超过 100 MB',
+    meshUploadUploading: '上传网格文件中...',
+    meshUploadRemove: '移除',
+    meshUploadFailed: '网格文件上传失败',
     preRunSettings: '执行设置',
     preRunHint: '（可选）选择执行模式和 Pre-Run 验证',
     preRunSteps: 'Pre-Run 步数',
@@ -105,7 +112,12 @@ const strings = {
     errorCodexQuota: '平台 Codex 额度暂时用完，每几小时会自动恢复，请稍等后重试，或使用 BYOK 自带 API Key。',
     errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
     errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
-    errorTimeout: '仿真运行超时，可能是模型配置有误或网格过大。请检查后重试。',
+    errorTimeout: '仿真未在限定时间内收敛。建议放宽残差标准、简化模型，或延长超时时间。',
+    errorOOM: '网格过大导致内存不足（OOM）。建议简化几何、降低网格密度，或上传更精简的 .msh 文件。',
+    errorDiskExceeded: '仿真输出超过磁盘限制。建议减少输出频率（增大 writeInterval）或简化模型。',
+    errorConfigError: '仿真配置错误，请查看详细日志。',
+    timeoutLabel: '超时时间',
+    timeoutDefault: '默认（60 分钟）',
     queuePosition: '排队第 {n} 位',
     queueElapsed: '已等待 {min} 分钟',
     queueElapsedShort: '刚提交',
@@ -175,6 +187,13 @@ const strings = {
     taskCancelledToast: 'Task cancelled',
     cancelFailedToast: 'Cancel failed',
     examplesTitle: 'Example Prompts (click to fill)',
+    meshUploadLabel: 'Upload Mesh File (optional)',
+    meshUploadHint: 'Gmsh .msh format, max 100 MB',
+    meshUploadInvalidType: 'Only .msh files are supported',
+    meshUploadTooLarge: 'File must be less than 100 MB',
+    meshUploadUploading: 'Uploading mesh file...',
+    meshUploadRemove: 'Remove',
+    meshUploadFailed: 'Mesh file upload failed',
     preRunSettings: 'Execution Settings',
     preRunHint: '(Optional) Choose execution mode and Pre-Run validation',
     preRunSteps: 'Pre-Run Steps',
@@ -214,7 +233,12 @@ const strings = {
     errorCodexQuota: 'Platform Codex quota temporarily exhausted. It resets every few hours — please wait and try again, or use BYOK with your own API key.',
     errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
     errorAuth: 'LLM API authentication failed. Please check your API key.',
-    errorTimeout: 'Simulation timed out. This may indicate incorrect model config or an overly large mesh. Please review and retry.',
+    errorTimeout: 'Simulation did not converge within the time limit. Try relaxing residual targets, simplifying the model, or increasing the timeout.',
+    errorOOM: 'Out of memory (OOM) — mesh too large. Try simplifying geometry, reducing mesh density, or uploading a lighter .msh file.',
+    errorDiskExceeded: 'Simulation output exceeded disk limit. Try reducing output frequency (increase writeInterval) or simplifying the model.',
+    errorConfigError: 'Simulation configuration error. Check the log for details.',
+    timeoutLabel: 'Timeout',
+    timeoutDefault: 'Default (60 min)',
     queuePosition: '#{n} in queue',
     queueElapsed: 'waiting {min} min',
     queueElapsedShort: 'just submitted',
@@ -308,12 +332,14 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [codexModel, setCodexModel] = useState('');  // '' = default (gpt-5.3-codex)
   const [apiKey, setApiKey] = useState('');
   const [codexToken, setCodexToken] = useState('');
+  const [meshFile, setMeshFile] = useState(null); // File object or null
 
   // Pre-run settings state
   const [showPreRunSettings, setShowPreRunSettings] = useState(false);
   const [preRunEndTime, setPreRunEndTime] = useState('1');  // '1' = single step (default), '10', '100'
   const [pipelineMode, setPipelineMode] = useState('auto');  // 'auto' or 'controlled'
   const [selectedCheckpoints, setSelectedCheckpoints] = useState(['files_review', 'pre_run_review']);
+  const [timeoutMinutes, setTimeoutMinutes] = useState('');  // '' = default (60 min)
 
   // Checkpoint action state (track which jobs are being confirmed/rejected)
   const [checkpointActionJobs, setCheckpointActionJobs] = useState(new Set());
@@ -665,6 +691,23 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
     setLoading(true);
     try {
+      // Upload mesh file to Supabase Storage first (if provided)
+      let meshFileInfo = null;
+      if (meshFile) {
+        toast.loading(t.meshUploadUploading, { id: 'mesh-upload' });
+        const meshStoragePath = `mesh_uploads/${session.user.id}/${Date.now()}_${meshFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('simulation_results')
+          .upload(meshStoragePath, meshFile, { contentType: 'application/octet-stream', upsert: false });
+        toast.dismiss('mesh-upload');
+        if (uploadError) throw new Error(t.meshUploadFailed + ': ' + uploadError.message);
+        meshFileInfo = {
+          storage_path: meshStoragePath,
+          original_name: meshFile.name,
+          size_bytes: meshFile.size,
+        };
+      }
+
       const requestBody = { prompt: newPrompt };
       if (solverBackend !== 'openfoam-v10') {
         requestBody.solver_backend = solverBackend;
@@ -699,6 +742,14 @@ export default function AISimulationTab({ session, language, storageUsage }) {
           requestBody.checkpoints = selectedCheckpoints;
         }
       }
+      // Custom mesh file
+      if (meshFileInfo) {
+        requestBody.mesh_file = meshFileInfo;
+      }
+      // Custom timeout
+      if (timeoutMinutes) {
+        requestBody.timeout_minutes = parseInt(timeoutMinutes, 10);
+      }
 
       const response = await fetch(`${API_URL}/api/v1/simulations`, {
         method: 'POST',
@@ -714,6 +765,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       }
       setNewPrompt('');
       setApiKey('');
+      setMeshFile(null);
       fetchDailyUsage();  // refresh remaining count
     } catch (error) {
       toast.error(error.message);
@@ -1024,6 +1076,20 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                     </select>
                   </>
                 )}
+
+                {/* Timeout selector */}
+                <label style={{ fontSize: '0.82rem', fontWeight: 500, marginTop: '8px' }}>{t.timeoutLabel}</label>
+                <select
+                  value={timeoutMinutes}
+                  onChange={(e) => setTimeoutMinutes(e.target.value)}
+                  style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                >
+                  <option value="">{t.timeoutDefault}</option>
+                  <option value="20">20 min</option>
+                  <option value="40">40 min</option>
+                  <option value="60">60 min</option>
+                  <option value="120">120 min</option>
+                </select>
               </div>
             )}
           </div>
@@ -1050,6 +1116,62 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             onChange={(e) => setNewPrompt(e.target.value)}
             rows="8"
           />
+
+          {/* Mesh file upload */}
+          <div style={{ margin: '8px 0' }}>
+            <label style={{
+              fontSize: '0.82rem', color: 'var(--text-secondary)',
+              display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+            }}>
+              <span>📐 {t.meshUploadLabel}</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                — {t.meshUploadHint}
+              </span>
+            </label>
+            {!meshFile ? (
+              <input
+                type="file"
+                accept=".msh"
+                style={{ fontSize: '0.82rem', marginTop: '4px' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (!file.name.toLowerCase().endsWith('.msh')) {
+                    toast.error(t.meshUploadInvalidType);
+                    e.target.value = '';
+                    return;
+                  }
+                  if (file.size > 100 * 1024 * 1024) {
+                    toast.error(t.meshUploadTooLarge);
+                    e.target.value = '';
+                    return;
+                  }
+                  setMeshFile(file);
+                }}
+              />
+            ) : (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                marginTop: '4px', fontSize: '0.82rem',
+                padding: '4px 8px', background: 'var(--bg-tertiary)',
+                borderRadius: '4px',
+              }}>
+                <span>📄 {meshFile.name}</span>
+                <span style={{ color: 'var(--text-muted)' }}>
+                  ({(meshFile.size / (1024 * 1024)).toFixed(1)} MB)
+                </span>
+                <button type="button" onClick={() => setMeshFile(null)}
+                  style={{
+                    marginLeft: 'auto', fontSize: '0.75rem',
+                    padding: '2px 8px', cursor: 'pointer',
+                    background: 'none', border: '1px solid var(--border)',
+                    borderRadius: '3px', color: 'var(--text-secondary)',
+                  }}
+                >{t.meshUploadRemove}</button>
+              </div>
+            )}
+          </div>
+
           {/* Prompt examples */}
           <div className="prompt-examples">
             <small className="prompt-examples-title">{t.examplesTitle}</small>
@@ -1245,6 +1367,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           : sim.result_data.error_category === 'rate_limit' ? t.errorRateLimit
                           : sim.result_data.error_category === 'auth_error' ? t.errorAuth
                           : sim.result_data.error_category === 'timeout' ? t.errorTimeout
+                          : sim.result_data.error_category === 'oom' ? t.errorOOM
+                          : sim.result_data.error_category === 'disk_exceeded' ? t.errorDiskExceeded
+                          : sim.result_data.error_category === 'config_error' ? t.errorConfigError
                           : sim.result_data.error}
                       </div>
                     )}
