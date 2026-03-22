@@ -76,9 +76,20 @@ Describe your simulation requirements in natural language in the input box. A go
 - **Solver preference**: If you have a specific requirement (icoFoam, simpleFoam, etc.)
 - **Turbulence model**: Laminar / k-epsilon / k-omega SST / Spalart-Allmaras, etc.
 
-### 3.2 Example Prompts
+### 3.2 Uploading a Mesh File (Optional)
 
-The platform provides 4 preset examples — click any to auto-fill the input:
+If your simulation uses a custom mesh (e.g., complex airfoil, external geometry), you can upload a Gmsh `.msh` file:
+
+- Click "▶ Upload Mesh File (optional)" above the prompt input
+- Select a `.msh` file (max 100 MB)
+- A green checkmark and file info will appear when selected
+- The file is uploaded to cloud storage on submission, and Foam-Agent will use it instead of auto-generated blockMesh
+
+> **Note**: Only Gmsh ASCII 2.2 format (`.msh`) is currently supported. If your geometry can be described using blockMesh or snappyHexMesh built-in searchable geometries (box, cylinder, sphere), no mesh upload is needed.
+
+### 3.3 Example Prompts
+
+The platform provides preset examples — click any to auto-fill. Start with simple cases. More tested prompts are available at the [FoamGPT Dataset](https://huggingface.co/datasets/LeoYML/FoamGPT).
 
 | Example | Type | Solver | Tag |
 |---------|------|--------|-----|
@@ -86,10 +97,11 @@ The platform provides 4 preset examples — click any to auto-fill the input:
 | **Porous Blockage** | Incompressible laminar + Darcy | pisoFoam | Porous |
 | **Elbow Channel** | Incompressible laminar, 2 inlets | icoFoam | Pipe |
 | **Natural Convection** | Heat transfer + buoyancy | buoyantFoam | Heat |
+| **Tandem Wing** | Incompressible turbulent (.msh required) | simpleFoam | Custom Mesh |
 
-### 3.3 Submitting
+### 3.4 Submitting
 
-After writing your prompt, click "Submit Task". The system will return a confirmation immediately and the task will enter the queue.
+After writing your prompt, click "Submit Task". If a .msh file is attached, the system will upload the mesh first, then submit the task. The task will enter the queue immediately.
 
 ---
 
@@ -194,7 +206,9 @@ When a task fails, the system displays the specific reason on the task card:
 | Codex quota exhausted | "Platform Codex shared quota exceeded" | Try again later or switch models |
 | API rate limit | "LLM API rate limit or quota exceeded" | Try again later or use a different API key |
 | Authentication failure | "LLM API authentication failed" | Check that your API key is correct |
-| Timeout | "Simulation timed out" | Check your model configuration or reduce mesh size |
+| Timeout | "Simulation did not converge within the time limit" | Relax residual targets, simplify the model, or increase timeout in execution settings |
+| Out of Memory (OOM) | "Mesh too large, out of memory" | Simplify geometry, reduce mesh density, or upload a lighter .msh file |
+| Disk exceeded | "Output exceeded disk limit" | Reduce output frequency (increase writeInterval) or simplify the model |
 
 ### Cancelling a Task
 
@@ -274,7 +288,9 @@ When using Interactive mode, you can rate each checkpoint separately:
 | Item | Limit | Notes |
 |------|-------|-------|
 | Daily tasks (free models) | **10 per day** | Resets at UTC midnight. BYOK mode is unlimited |
-| Simulation timeout | **60 minutes** | Auto-marked as failed on timeout |
+| Simulation timeout | **60 minutes** (configurable) | Choose 20/40/60/120 min in execution settings |
+| Per-task disk limit | **400 MB** | Task auto-terminated if exceeded |
+| Mesh file size | **100 MB** | Max upload size for .msh files |
 | Submission rate | **5 per minute** | Per IP address |
 
 ### 10.2 Storage Limits
@@ -338,6 +354,7 @@ By using the CFDQandA platform, you agree to our Privacy Policy. You are require
 Regarding your data, we commit to the following:
 
 - **API Keys**: Used only for the current task; immediately deleted from the database after the worker reads them
+- **Mesh files**: Uploaded .msh files are stored on Supabase cloud and deleted together with the associated task
 - **Simulation data**: Stored on Supabase cloud; completed tasks are retained for 14 days, failed/cancelled tasks for 7 days, and soft-deleted tasks are permanently purged after 3 days
 - **Log sanitization**: API keys in log files are automatically replaced with `[REDACTED]` before upload
 - **Third-party services**: The platform uses Supabase (database/auth/storage), Vercel (frontend hosting), and LLM APIs (OpenAI/Anthropic, etc.). Your prompts are sent to the LLM provider to generate simulation configurations
@@ -355,4 +372,4 @@ If you have questions or suggestions, please reach out through:
 
 ---
 
-*This guide was last updated in March 2026. Platform features may be updated over time — refer to the actual interface for the latest information.*
+*This guide was last updated on March 21, 2026. Platform features may be updated over time — refer to the actual interface for the latest information.*

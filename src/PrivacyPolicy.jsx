@@ -2,7 +2,7 @@
 const strings = {
   zh: {
     title: '隐私政策',
-    lastUpdated: '最后更新：2026 年 3 月',
+    lastUpdated: '最后更新：2026 年 3 月 21 日',
     backButton: '返回',
     sections: [
       {
@@ -12,6 +12,7 @@ const strings = {
 • 仿真任务数据：您提交的仿真需求描述（prompt）、选择的求解器和 LLM 配置、生成的配置文件和仿真结果
 • 使用数据：任务提交时间、任务状态变更、LLM token 使用量
 • 可选数据：您主动提供的任务评价（整体评价和阶段评价）、文件反馈、专家咨询需求
+• 上传文件：如您上传了自定义网格文件（.msh），该文件存储在 Supabase Storage 中，随关联任务一起删除
 • 如您选择"使用自己的 API Key"，该 Key 仅用于当前任务，Worker 读取后立即从数据库中删除
 • 隐私政策同意时间戳：记录您同意本政策的时间`,
       },
@@ -111,7 +112,7 @@ const strings = {
   },
   en: {
     title: 'Privacy Policy',
-    lastUpdated: 'Last updated: March 2026',
+    lastUpdated: 'Last updated: March 21, 2026',
     backButton: 'Back',
     sections: [
       {
@@ -121,6 +122,7 @@ const strings = {
 • Simulation task data: your simulation requirement descriptions (prompts), solver and LLM configuration choices, generated configuration files, and simulation results
 • Usage data: task submission times, task status changes, LLM token usage
 • Optional data: task ratings (overall and per-stage), file feedback, and expert consultation requests you voluntarily provide
+• Uploaded files: if you upload a custom mesh file (.msh), it is stored in Supabase Storage and deleted together with the associated task
 • If you choose "Bring Your Own Key", the API key is used only for the current task and deleted from the database immediately after the Worker reads it
 • Privacy policy consent timestamp: records when you agreed to this policy`,
       },

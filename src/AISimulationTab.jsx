@@ -66,6 +66,8 @@ const strings = {
     taskCancelledToast: '任务已取消',
     cancelFailedToast: '取消失败',
     examplesTitle: '示例 Prompt（点击填入）',
+    examplesHint: '建议从简单算例开始。更多验证过的 Prompt 见',
+    examplesLinkText: 'FoamGPT 数据集',
     meshUploadLabel: '上传网格文件（可选）',
     meshUploadHint: '支持 Gmsh .msh 格式，最大 100 MB',
     meshUploadInvalidType: '仅支持 .msh 文件',
@@ -191,6 +193,8 @@ const strings = {
     taskCancelledToast: 'Task cancelled',
     cancelFailedToast: 'Cancel failed',
     examplesTitle: 'Example Prompts (click to fill)',
+    examplesHint: 'Start with simple cases. More tested prompts at',
+    examplesLinkText: 'FoamGPT Dataset',
     meshUploadLabel: 'Upload Mesh File (optional)',
     meshUploadHint: 'Gmsh .msh format, max 100 MB',
     meshUploadInvalidType: 'Only .msh files are supported',
@@ -1216,7 +1220,17 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
           {/* Prompt examples */}
           <div className="prompt-examples">
-            <small className="prompt-examples-title">{t.examplesTitle}</small>
+            <small className="prompt-examples-title">
+              {t.examplesTitle}
+              <span style={{ fontWeight: 'normal', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                {t.examplesHint}{' '}
+                <a href="https://huggingface.co/datasets/LeoYML/FoamGPT"
+                   target="_blank" rel="noopener noreferrer"
+                   style={{ color: 'var(--accent)' }}>
+                  {t.examplesLinkText}
+                </a>
+              </span>
+            </small>
             <div className="prompt-examples-list">
               {promptExamples.map((ex) => (
                 <button
