@@ -1109,6 +1109,71 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             </div>
           )}
 
+          {/* Mesh file upload — styled like model settings toggle */}
+          <div style={{ margin: '8px 0' }}>
+            <button
+              type="button"
+              onClick={() => !meshFile && document.getElementById('mesh-file-input')?.click()}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent)',
+                cursor: 'pointer',
+                padding: 0,
+                fontSize: '0.9rem',
+              }}
+            >
+              {meshFile ? '▼' : '▶'} {t.meshUploadLabel}
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                {t.meshUploadHint}
+              </span>
+            </button>
+            <input
+              id="mesh-file-input"
+              type="file"
+              accept=".msh"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.msh')) {
+                  toast.error(t.meshUploadInvalidType);
+                  e.target.value = '';
+                  return;
+                }
+                if (file.size > 100 * 1024 * 1024) {
+                  toast.error(t.meshUploadTooLarge);
+                  e.target.value = '';
+                  return;
+                }
+                setMeshFile(file);
+                e.target.value = '';
+              }}
+            />
+            {meshFile && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                marginTop: '6px', fontSize: '0.85rem',
+                padding: '6px 10px', background: 'var(--bg-tertiary)',
+                borderRadius: 'var(--radius-md)',
+              }}>
+                <span style={{ color: 'var(--accent)' }}>▶</span>
+                <span>{meshFile.name}</span>
+                <span style={{ color: 'var(--text-muted)' }}>
+                  ({(meshFile.size / (1024 * 1024)).toFixed(1)} MB)
+                </span>
+                <button type="button" onClick={() => setMeshFile(null)}
+                  style={{
+                    marginLeft: 'auto', fontSize: '0.78rem',
+                    padding: '2px 10px', cursor: 'pointer',
+                    background: 'none', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)',
+                  }}
+                >{t.meshUploadRemove}</button>
+              </div>
+            )}
+          </div>
+
           <textarea
             className="inputField prompt-textarea"
             placeholder={t.promptPlaceholder}
@@ -1116,61 +1181,6 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             onChange={(e) => setNewPrompt(e.target.value)}
             rows="8"
           />
-
-          {/* Mesh file upload */}
-          <div style={{ margin: '8px 0' }}>
-            <label style={{
-              fontSize: '0.82rem', color: 'var(--text-secondary)',
-              display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
-            }}>
-              <span>📐 {t.meshUploadLabel}</span>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                — {t.meshUploadHint}
-              </span>
-            </label>
-            {!meshFile ? (
-              <input
-                type="file"
-                accept=".msh"
-                style={{ fontSize: '0.82rem', marginTop: '4px' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  if (!file.name.toLowerCase().endsWith('.msh')) {
-                    toast.error(t.meshUploadInvalidType);
-                    e.target.value = '';
-                    return;
-                  }
-                  if (file.size > 100 * 1024 * 1024) {
-                    toast.error(t.meshUploadTooLarge);
-                    e.target.value = '';
-                    return;
-                  }
-                  setMeshFile(file);
-                }}
-              />
-            ) : (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                marginTop: '4px', fontSize: '0.82rem',
-                padding: '4px 8px', background: 'var(--bg-tertiary)',
-                borderRadius: '4px',
-              }}>
-                <span>📄 {meshFile.name}</span>
-                <span style={{ color: 'var(--text-muted)' }}>
-                  ({(meshFile.size / (1024 * 1024)).toFixed(1)} MB)
-                </span>
-                <button type="button" onClick={() => setMeshFile(null)}
-                  style={{
-                    marginLeft: 'auto', fontSize: '0.75rem',
-                    padding: '2px 8px', cursor: 'pointer',
-                    background: 'none', border: '1px solid var(--border)',
-                    borderRadius: '3px', color: 'var(--text-secondary)',
-                  }}
-                >{t.meshUploadRemove}</button>
-              </div>
-            )}
-          </div>
 
           {/* Prompt examples */}
           <div className="prompt-examples">
