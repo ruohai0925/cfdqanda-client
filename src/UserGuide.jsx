@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 import guideZh from '../USER_GUIDE_zh.md?raw';
 import guideEn from '../USER_GUIDE_en.md?raw';
 
@@ -19,7 +20,7 @@ export default function UserGuide({ language, onBack }) {
           {t.backButton}
         </button>
       </div>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>{content}</ReactMarkdown>
     </div>
   );
 }
