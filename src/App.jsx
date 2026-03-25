@@ -14,7 +14,7 @@ const footerStrings = {
 
 function App() {
   const [session, setSession] = useState(null)
-  const [language, setLanguage] = useState('zh')
+  const [language, setLanguage] = useState('en')
   const [currentPage, setCurrentPage] = useState(
     window.location.hash === '#privacy' ? 'privacy'
     : window.location.hash === '#guide' ? 'guide'
