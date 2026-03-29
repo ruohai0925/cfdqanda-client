@@ -45,7 +45,7 @@ export default function InvitationBoard({ language, onBack }) {
     try {
       const { data, error: rpcError } = await supabase.rpc(
         'list_invitation_codes_with_replenish',
-        { batch_size: 50 }
+        { batch_size: 20 }
       );
       if (rpcError) throw rpcError;
       setCodes(data || []);
@@ -78,7 +78,7 @@ export default function InvitationBoard({ language, onBack }) {
   const availableCount = codes.filter(c => !c.is_used).length;
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+    <div style={{ maxWidth: 480, margin: '0 auto', width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <button
           onClick={onBack}
@@ -104,8 +104,8 @@ export default function InvitationBoard({ language, onBack }) {
           </p>
 
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            display: 'flex',
+            flexDirection: 'column',
             gap: 8,
           }}>
             {codes.map((c) => (
