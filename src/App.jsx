@@ -62,7 +62,15 @@ function App() {
     setCurrentPage('guide')
   }
 
+  const [authMode, setAuthMode] = useState('login')
+
   const navigateBack = () => {
+    window.location.hash = ''
+    setCurrentPage('main')
+  }
+
+  const navigateBackToSignup = () => {
+    setAuthMode('signup')
     window.location.hash = ''
     setCurrentPage('main')
   }
@@ -91,7 +99,7 @@ function App() {
     return (
       <div className="container" style={{ padding: '50px 20px 100px 20px' }}>
         <Toaster position="top-center" />
-        <InvitationBoard language={language} onBack={navigateBack} />
+        <InvitationBoard language={language} onBack={navigateBackToSignup} />
       </div>
     )
   }
@@ -128,7 +136,7 @@ function App() {
   return (
     <div className="container" style={{ padding: '50px 20px 100px 20px' }}>
       <Toaster position="top-center" />
-      <Auth language={language} setLanguage={setLanguage} />
+      <Auth language={language} setLanguage={setLanguage} initialMode={authMode} />
       <footer className="app-footer">
         <a href="#guide" onClick={navigateToGuide}>
           {footerStrings[language].guideLink}

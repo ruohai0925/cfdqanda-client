@@ -85,11 +85,11 @@ const strings = {
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
-export default function Auth({ language, setLanguage }) {
+export default function Auth({ language, setLanguage, initialMode = 'login' }) {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [formMode, setFormMode] = useState('login') // 'login' | 'signup' | 'reset'
+  const [formMode, setFormMode] = useState(initialMode) // 'login' | 'signup' | 'reset'
 
   // Signup-only fields
   const [invitationCode, setInvitationCode] = useState('')
