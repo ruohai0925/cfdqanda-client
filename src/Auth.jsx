@@ -32,6 +32,7 @@ const strings = {
     switchToSignup: '注册',
     switchToLogin: '登录',
     invitationCode: '邀请码',
+    getInvitationCode: '没有邀请码？点此领取',
     invitationCodePlaceholder: '请输入邀请码（如 CFDQ-XXXX-XXXX-XXXX）',
     invitationCodeRequired: '请输入邀请码。',
     invitationCodeInvalid: '邀请码无效或已被使用。',
@@ -69,6 +70,7 @@ const strings = {
     switchToSignup: 'Sign Up',
     switchToLogin: 'Login',
     invitationCode: 'Invitation Code',
+    getInvitationCode: "Don't have one? Get a code here",
     invitationCodePlaceholder: 'Enter your invitation code (e.g. CFDQ-XXXX-XXXX-XXXX)',
     invitationCodeRequired: 'Please enter an invitation code.',
     invitationCodeInvalid: 'Invalid or already used invitation code.',
@@ -295,7 +297,10 @@ export default function Auth({ language, setLanguage }) {
           <input id="display-name" className="inputField" type="text" placeholder={t.displayNamePlaceholder} value={displayName} required onChange={(e) => setDisplayName(e.target.value)} />
           <label htmlFor="organization">{t.organization}</label>
           <input id="organization" className="inputField" type="text" placeholder={t.organizationPlaceholder} value={organization} onChange={(e) => setOrganization(e.target.value)} />
-          <label htmlFor="invitation-code">{t.invitationCode}</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <label htmlFor="invitation-code">{t.invitationCode}</label>
+            <a href="#invite" style={{ fontSize: '0.78rem', color: 'var(--accent)' }}>{t.getInvitationCode}</a>
+          </div>
           <input id="invitation-code" className="inputField" type="text" placeholder={t.invitationCodePlaceholder} value={invitationCode} required onChange={(e) => setInvitationCode(e.target.value.toUpperCase())} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em' }} />
 
           {/* Privacy policy checkbox */}

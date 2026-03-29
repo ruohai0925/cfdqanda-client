@@ -5,6 +5,7 @@ import Auth from './Auth'
 import MainLayout from './MainLayout'
 import PrivacyPolicy from './PrivacyPolicy'
 import PlatformFeedback from './PlatformFeedback'
+import InvitationBoard from './InvitationBoard'
 const UserGuide = lazy(() => import('./UserGuide'))
 
 const footerStrings = {
@@ -18,6 +19,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState(
     window.location.hash === '#privacy' ? 'privacy'
     : window.location.hash === '#guide' ? 'guide'
+    : window.location.hash === '#invite' ? 'invite'
     : 'main'
   )
   const [showFeedback, setShowFeedback] = useState(false)
@@ -40,6 +42,7 @@ function App() {
       const hash = window.location.hash
       if (hash === '#privacy') setCurrentPage('privacy')
       else if (hash === '#guide') setCurrentPage('guide')
+      else if (hash === '#invite') setCurrentPage('invite')
       else if (hash === '' || hash === '#') setCurrentPage('main')
       // Ignore other hashes (e.g. #1-注册与登录) — these are in-page anchor links
     }
@@ -80,6 +83,15 @@ function App() {
         <Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>}>
           <UserGuide language={language} onBack={navigateBack} />
         </Suspense>
+      </div>
+    )
+  }
+
+  if (currentPage === 'invite') {
+    return (
+      <div className="container" style={{ padding: '50px 20px 100px 20px' }}>
+        <Toaster position="top-center" />
+        <InvitationBoard language={language} onBack={navigateBack} />
       </div>
     )
   }
