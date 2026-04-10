@@ -133,6 +133,10 @@ export default function Auth({ language, setLanguage, initialMode = 'login' }) {
       toast.error(t.invitationCodeRequired);
       return;
     }
+    if (!/^CFDQ-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(invitationCode.trim())) {
+      toast.error(t.invitationCodeInvalid);
+      return;
+    }
     if (!displayName.trim()) {
       toast.error(t.displayNameRequired);
       return;
