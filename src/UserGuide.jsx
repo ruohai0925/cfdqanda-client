@@ -19,8 +19,8 @@ const strings = {
   },
 };
 
-// Embed via youtube-nocookie to avoid tracking cookies until play. t=8 skips the title card.
-const TUTORIAL_EMBED_URL = 'https://www.youtube-nocookie.com/embed/_Fveasp8QHI?start=8';
+// Embed via youtube-nocookie so visitors aren't tracked until they hit play.
+const TUTORIAL_EMBED_URL = 'https://www.youtube-nocookie.com/embed/_Fveasp8QHI';
 
 export default function UserGuide({ language, onBack }) {
   const t = strings[language];
