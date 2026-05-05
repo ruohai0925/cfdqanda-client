@@ -9,8 +9,8 @@ import InvitationBoard from './InvitationBoard'
 const UserGuide = lazy(() => import('./UserGuide'))
 
 const footerStrings = {
-  zh: { privacyLink: '隐私政策', feedbackLink: '平台反馈', guideLink: '用户指南' },
-  en: { privacyLink: 'Privacy Policy', feedbackLink: 'Feedback', guideLink: 'User Guide' },
+  zh: { privacyLink: '隐私政策', feedbackLink: '平台反馈', guideLink: '用户指南（含视频）' },
+  en: { privacyLink: 'Privacy Policy', feedbackLink: 'Feedback', guideLink: 'User Guide (incl. video)' },
 };
 
 function App() {

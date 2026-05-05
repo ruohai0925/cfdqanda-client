@@ -5,9 +5,22 @@ import guideZh from '../USER_GUIDE_zh.md?raw';
 import guideEn from '../USER_GUIDE_en.md?raw';
 
 const strings = {
-  zh: { backButton: '返回', downloadButton: '下载 Markdown' },
-  en: { backButton: 'Back', downloadButton: 'Download Markdown' },
+  zh: {
+    backButton: '返回',
+    downloadButton: '下载 Markdown',
+    videoTitle: '平台介绍视频（英文）',
+    videoCaption: '快速了解平台核心功能。',
+  },
+  en: {
+    backButton: 'Back',
+    downloadButton: 'Download Markdown',
+    videoTitle: 'Platform Walkthrough',
+    videoCaption: 'A quick tour of the platform.',
+  },
 };
+
+// Embed via youtube-nocookie to avoid tracking cookies until play. t=8 skips the title card.
+const TUTORIAL_EMBED_URL = 'https://www.youtube-nocookie.com/embed/_Fveasp8QHI?start=8';
 
 export default function UserGuide({ language, onBack }) {
   const t = strings[language];
@@ -48,6 +61,27 @@ export default function UserGuide({ language, onBack }) {
           {t.downloadButton}
         </button>
       </div>
+      <section className="user-guide-video" style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ marginTop: 0 }}>{t.videoTitle}</h2>
+        <p style={{ marginTop: 0, color: 'var(--text-muted, #666)' }}>{t.videoCaption}</p>
+        <div style={{
+          position: 'relative',
+          paddingBottom: '56.25%',  // 16:9
+          height: 0,
+          overflow: 'hidden',
+          borderRadius: '8px',
+        }}>
+          <iframe
+            src={TUTORIAL_EMBED_URL}
+            title={t.videoTitle}
+            frameBorder="0"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+        </div>
+      </section>
       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>{content}</ReactMarkdown>
     </div>
   );
