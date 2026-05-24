@@ -305,9 +305,16 @@ const MODEL_VERSIONS = {
     { value: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5 (fastest/cheapest)' },
     { value: 'claude-sonnet-4-5-20250929', label: 'claude-sonnet-4-5' },
   ],
+  // DeepSeek V4 family (v4-pro / v4-flash) defaults to thinking mode, which
+  // rejects tool_choice — incompatible with Foam-Agent's structured-output
+  // planner. The legacy `deepseek-chat` / `deepseek-reasoner` aliases were
+  // also removed from DeepSeek's API. Tested 2026-05-23, all DeepSeek models
+  // currently fail at the planner stage with HTTP 400 "Thinking mode does
+  // not support this tool_choice". Tracked in docs/active/Foam-Agent-Comments.md
+  // (section 7) — fix needs upstream Foam-Agent extra_body passthrough.
   'deepseek': [
-    { value: 'deepseek-chat', label: 'deepseek-chat (V3.2)', isDefault: true },
-    { value: 'deepseek-reasoner', label: 'deepseek-reasoner (R1)' },
+    { value: 'deepseek-v4-pro', label: 'deepseek-v4-pro (currently unavailable)', isDefault: true },
+    { value: 'deepseek-v4-flash', label: 'deepseek-v4-flash (currently unavailable)' },
   ],
   'qwen': [
     { value: 'qwen-plus', label: 'qwen-plus (recommended)', isDefault: true },
@@ -1025,6 +1032,20 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         style={{ marginBottom: '4px' }} />
                       <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t.apiKeyHint}</small>
                     </div>
+                    {modelProvider === 'deepseek' && (
+                      <div style={{
+                        marginTop: '8px', padding: '8px 10px',
+                        borderRadius: '4px',
+                        background: 'var(--bg-warning, #fff3cd)',
+                        color: 'var(--text-warning, #856404)',
+                        fontSize: '0.78rem', lineHeight: '1.4',
+                        border: '1px solid var(--border-warning, #ffeaa7)',
+                      }}>
+                        {language === 'zh'
+                          ? '⚠️ DeepSeek V4 模型默认开启 thinking mode，与本平台所需的结构化输出 (tool_choice) 不兼容。提交会在 planner 阶段立即失败。建议改用 OpenAI 或 Anthropic。'
+                          : '⚠️ DeepSeek V4 models default to thinking mode, which is incompatible with the structured output (tool_choice) this platform requires. Submissions will fail immediately at the planner stage. Please use OpenAI or Anthropic instead.'}
+                      </div>
+                    )}
                   </div>
                 )}
                 <div style={{ textAlign: 'right', marginTop: '8px' }}>
