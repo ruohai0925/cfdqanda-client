@@ -954,7 +954,17 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         {t.byokProviderLabel}
                       </label>
                       <select value={modelProvider}
-                        onChange={(e) => { setModelProvider(e.target.value); setModelVersion(''); setApiKey(''); }}
+                        onChange={(e) => {
+                          const newProvider = e.target.value;
+                          setModelProvider(newProvider);
+                          // Auto-fill the provider's default model so users don't carry
+                          // over a stale custom-typed model name (2026-05-21 incident:
+                          // a user submitted provider=openai with model=qwen-plus from a
+                          // previous attempt, which triggered confusing 401 responses).
+                          const defaultModel = (MODEL_VERSIONS[newProvider] || []).find(m => m.isDefault);
+                          setModelVersion(defaultModel ? defaultModel.value : '');
+                          setApiKey('');
+                        }}
                         style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                       >
                         <option value="openai">OpenAI</option>
