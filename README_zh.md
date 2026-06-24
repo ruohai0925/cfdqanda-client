@@ -2,7 +2,7 @@
 
 > **许可证：** [PolyForm Strict 1.0.0](https://polyformproject.org/licenses/strict/1.0.0/) — 源码仅供个人及非商业用途查阅和使用，禁止商业使用。
 
-[CFDQandA](https://cfdqanda.com) 的 React 前端 —— 基于自然语言的 CFD 仿真自动化平台。
+[CFDQandA](https://foam-agent.com) 的 React 前端 —— 基于自然语言的 CFD 仿真自动化平台。
 
 ## 技术栈
 
