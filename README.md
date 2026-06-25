@@ -2,7 +2,7 @@
 
 > **License:** [PolyForm Strict 1.0.0](https://polyformproject.org/licenses/strict/1.0.0/) — source available for personal and non-commercial use only.
 
-React frontend for [CFDQandA](https://foam-agent.com) — a natural-language-driven CFD simulation platform.
+React frontend for [Foam-Agent](https://foam-agent.com) — a natural-language-driven CFD simulation platform.
 
 ## Tech Stack
 

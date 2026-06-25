@@ -7,7 +7,7 @@ const strings = {
     sections: [
       {
         heading: '1. 我们收集哪些数据',
-        content: `当您使用 CFDQandA 平台时，我们会收集以下数据：
+        content: `当您使用 Foam-Agent 平台时，我们会收集以下数据：
 • 账户信息：注册时提供的电子邮箱地址、加密后的密码、用户名和机构名称
 • 仿真任务数据：您提交的仿真需求描述（prompt）、选择的求解器和 LLM 配置、生成的配置文件和仿真结果
 • 使用数据：任务提交时间、任务状态变更、LLM token 使用量
@@ -83,7 +83,7 @@ const strings = {
       },
       {
         heading: '9. 开源许可与使用限制',
-        content: `CFDQandA 平台的源代码在 PolyForm Strict License 1.0.0 许可下发布。这意味着：
+        content: `Foam-Agent 平台的源代码在 PolyForm Strict License 1.0.0 许可下发布。这意味着：
 
 允许的用途：
 • 个人学习、研究、实验和测试（无商业意图）
@@ -117,7 +117,7 @@ const strings = {
     sections: [
       {
         heading: '1. What Data We Collect',
-        content: `When you use the CFDQandA platform, we collect the following data:
+        content: `When you use the Foam-Agent platform, we collect the following data:
 • Account information: email address, encrypted password, display name, and organization provided during registration
 • Simulation task data: your simulation requirement descriptions (prompts), solver and LLM configuration choices, generated configuration files, and simulation results
 • Usage data: task submission times, task status changes, LLM token usage
@@ -193,7 +193,7 @@ We do not sell or share your data with third-party advertisers.`,
       },
       {
         heading: '9. Open Source License & Usage Restrictions',
-        content: `The CFDQandA platform source code is released under the PolyForm Strict License 1.0.0. This means:
+        content: `The Foam-Agent platform source code is released under the PolyForm Strict License 1.0.0. This means:
 
 Permitted uses:
 • Personal study, research, experimentation, and testing (with no commercial intent)

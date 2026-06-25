@@ -1,6 +1,6 @@
-# CFDQandA User Guide
+# Foam-Agent User Guide
 
-> CFDQandA is an LLM-powered CFD simulation automation platform. Simply describe your simulation requirements in natural language, and the platform will automatically handle OpenFOAM meshing, boundary condition setup, solver execution, and post-processing.
+> Foam-Agent is an LLM-powered CFD simulation automation platform. Simply describe your simulation requirements in natural language, and the platform will automatically handle OpenFOAM meshing, boundary condition setup, solver execution, and post-processing.
 
 ---
 
@@ -349,7 +349,7 @@ Yes. Your model selection, execution mode, checkpoint preferences, and other set
 
 ## 12. Privacy Policy
 
-By using the CFDQandA platform, you agree to our Privacy Policy. You are required to accept the Privacy Policy checkbox during registration.
+By using the Foam-Agent platform, you agree to our Privacy Policy. You are required to accept the Privacy Policy checkbox during registration.
 
 Regarding your data, we commit to the following:
 

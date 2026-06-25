@@ -8,7 +8,7 @@ const ExpertOrderTab = lazy(() => import('./ExpertOrderTab'));
 // --- Language dictionary (shared header + tab labels) ---
 const strings = {
   zh: {
-    dashboardTitle: '计算流体力学问答',
+    dashboardTitle: 'Foam-Agent',
     welcome: '欢迎',
     signOut: '登出',
     cloudStorage: '云端存储',
@@ -26,7 +26,7 @@ const strings = {
     deleting: '删除中...',
   },
   en: {
-    dashboardTitle: 'CFDQandA',
+    dashboardTitle: 'Foam-Agent',
     welcome: 'Welcome',
     signOut: 'Sign Out',
     cloudStorage: 'Cloud Storage',

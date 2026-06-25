@@ -6,7 +6,7 @@ import { Turnstile } from '@marsidev/react-turnstile'
 // --- Language dictionary ---
 const strings = {
   zh: {
-    title: '计算流体力学问答',
+    title: 'Foam-Agent',
     descriptionLogin: '请使用您的邮箱进行登录。',
     descriptionSignup: '创建新账户。',
     descriptionReset: '输入您的邮箱，我们将发送密码重置链接。',
@@ -44,7 +44,7 @@ const strings = {
     captchaRequired: '请完成人机验证。',
   },
   en: {
-    title: 'CFDQandA',
+    title: 'Foam-Agent',
     descriptionLogin: 'Please log in with your email.',
     descriptionSignup: 'Create a new account.',
     descriptionReset: 'Enter your email and we will send a password reset link.',
