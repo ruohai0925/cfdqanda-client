@@ -217,12 +217,14 @@ export default function MainLayout({ session, language, setLanguage }) {
         >
           {t.aiTab}
         </button>
+        {/* Expert Orders tab hidden (not in use) — restore by uncommenting this button:
         <button
           className={`main-tab${activeTab === 'expert' ? ' main-tab-active' : ''}`}
           onClick={() => setActiveTab('expert')}
         >
           {t.expertTab}
         </button>
+        */}
       </div>
 
       {/* Tab content */}
