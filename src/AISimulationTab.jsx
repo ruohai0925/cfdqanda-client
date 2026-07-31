@@ -120,6 +120,7 @@ const strings = {
     errorConfigError: '仿真配置错误，请查看详细日志。',
     timeoutLabel: '超时时间',
     timeoutDefault: '默认（60 分钟）',
+    resourceHint: '提示:多相流、流固耦合、精细网格等复杂算例可能超出时限或内存(单核运行)。建议先用较粗网格/较短物理时长验证设置,再逐步加密;必要时选择更长的超时时间。已经跑失败的算例,可到 cfdqanda.com(同账号登录)提交专业诊断。',
     queuePosition: '排队第 {n} 位',
     queueElapsed: '已等待 {min} 分钟',
     queueElapsedShort: '刚提交',
@@ -247,6 +248,7 @@ const strings = {
     errorConfigError: 'Simulation configuration error. Check the log for details.',
     timeoutLabel: 'Timeout',
     timeoutDefault: 'Default (60 min)',
+    resourceHint: 'Note: complex cases (multiphase, FSI, fine meshes) may exceed the time limit or memory (single-core execution). Start with a coarser mesh / shorter physical time to validate the setup, then refine; pick a longer timeout if needed. For cases that already failed, submit them for professional diagnosis at cfdqanda.com (same account).',
     queuePosition: '#{n} in queue',
     queueElapsed: 'waiting {min} min',
     queueElapsedShort: 'just submitted',
@@ -1165,6 +1167,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   <option value="60">60 min</option>
                   <option value="120">120 min</option>
                 </select>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '6px 0 0', lineHeight: 1.5 }}>
+                  {t.resourceHint}
+                </p>
 
                 <div style={{ textAlign: 'right', marginTop: '8px' }}>
                   <button type="button" onClick={saveExecutionSettings}
