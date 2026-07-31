@@ -1468,6 +1468,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           : sim.result_data.error_category === 'disk_exceeded' ? t.errorDiskExceeded
                           : sim.result_data.error_category === 'config_error' ? t.errorConfigError
                           : sim.result_data.error}
+                        {/* 失败后案例体检提示(worker case_lint):死因附近的可行动线索 */}
+                        {Array.isArray(sim.result_data.lint_hints) && sim.result_data.lint_hints.length > 0 && (
+                          <ul style={{ margin: '8px 0 0', paddingLeft: '18px', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                            {sim.result_data.lint_hints.map((h, i) => <li key={i} style={{ marginBottom: 4 }}>{h}</li>)}
+                          </ul>
+                        )}
                       </div>
                     )}
 
