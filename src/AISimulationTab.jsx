@@ -420,7 +420,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       if (s.modelChoice) setModelChoice(s.modelChoice);
       if (s.modelProvider) setModelProvider(s.modelProvider);
       if (s.codexModel !== undefined) setCodexModel(s.codexModel);
-      if (s.claudeModel !== undefined) setClaudeModel(s.claudeModel);
+      if (s.claudeModel !== undefined) setClaudeModel(s.claudeModel === 'haiku' ? '' : s.claudeModel);
       if (s.modelVersion !== undefined) setModelVersion(s.modelVersion);
       if (s.solverBackend) setSolverBackend(s.solverBackend);
       if (s.pipelineMode) setPipelineMode(s.pipelineMode);
@@ -975,9 +975,10 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                     </label>
                     <select value={claudeModel} onChange={(e) => setClaudeModel(e.target.value)}
                       style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
+                      {/* haiku removed 2026-08-01: fails even the simplest cavity case
+                          (stuck in reviewer rewrite loop until timeout, task #628) */}
                       <option value="">opus ({language === 'zh' ? '默认，最强' : 'default, most capable'})</option>
                       <option value="sonnet">sonnet ({language === 'zh' ? '均衡' : 'balanced'})</option>
-                      <option value="haiku">haiku ({language === 'zh' ? '最快' : 'fastest'})</option>
                     </select>
                   </div>
                 )}
