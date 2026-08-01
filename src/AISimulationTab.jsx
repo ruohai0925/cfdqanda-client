@@ -45,6 +45,8 @@ const strings = {
     modelChoiceDefaultDesc: '平台提供 · 每人每天 {limit} 次',
     dailyUsage: '今日已用 {used}/{limit} 次',
     dailyUsageExhausted: '今日额度已用完，请明天再试或使用 BYOK',
+    modelChoiceClaude: 'Claude (opus)',
+    modelChoiceClaudeDesc: '平台 Claude 订阅提供 · 仅特定服务器可执行，高峰时可能排队',
     modelChoiceBYOK: '自带 API Key (BYOK)',
     modelChoiceBYOKDesc: '使用自己的 API Key，不受平台额度限制',
     promptRequired: '请输入仿真需求！',
@@ -173,6 +175,8 @@ const strings = {
     modelChoiceDefaultDesc: 'Platform-provided · {limit} tasks/day per user',
     dailyUsage: 'Used {used}/{limit} today',
     dailyUsageExhausted: 'Daily quota exhausted. Try again tomorrow or use BYOK.',
+    modelChoiceClaude: 'Claude (opus)',
+    modelChoiceClaudeDesc: 'Platform Claude subscription · runs on bridge-equipped workers, may queue at peak',
     modelChoiceBYOK: 'Bring Your Own Key (BYOK)',
     modelChoiceBYOKDesc: 'Use your own API key, no platform quota limits',
     promptRequired: 'Please enter your simulation requirements!',
@@ -354,6 +358,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [modelProvider, setModelProvider] = useState('openai');
   const [modelVersion, setModelVersion] = useState('');
   const [codexModel, setCodexModel] = useState('');  // '' = default (gpt-5.5)
+  const [claudeModel, setClaudeModel] = useState('');  // '' = default (opus), via claude-bridge
   const [apiKey, setApiKey] = useState('');
   const [codexToken, setCodexToken] = useState('');
   const [meshFile, setMeshFile] = useState(null); // File object or null
@@ -385,7 +390,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
   const saveUserSettings = () => {
     const settings = {
-      modelChoice, codexModel, modelProvider, modelVersion, solverBackend,
+      modelChoice, codexModel, claudeModel, modelProvider, modelVersion, solverBackend,
       pipelineMode, selectedCheckpoints, preRunEndTime, timeoutMinutes,
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -394,7 +399,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
   const saveModelSettings = () => {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-    Object.assign(saved, { modelChoice, codexModel, modelProvider, modelVersion, solverBackend });
+    Object.assign(saved, { modelChoice, codexModel, claudeModel, modelProvider, modelVersion, solverBackend });
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(saved));
     toast.success(t.modelSettingsSaved);
   };
@@ -415,6 +420,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       if (s.modelChoice) setModelChoice(s.modelChoice);
       if (s.modelProvider) setModelProvider(s.modelProvider);
       if (s.codexModel !== undefined) setCodexModel(s.codexModel);
+      if (s.claudeModel !== undefined) setClaudeModel(s.claudeModel);
       if (s.modelVersion !== undefined) setModelVersion(s.modelVersion);
       if (s.solverBackend) setSolverBackend(s.solverBackend);
       if (s.pipelineMode) setPipelineMode(s.pipelineMode);
@@ -759,6 +765,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         if (codexModel) llmConfig.model_version = codexModel;
         if (codexToken) llmConfig.codex_token = codexToken;
         requestBody.llm_config = llmConfig;
+      } else if (modelChoice === 'claude') {
+        // Platform Claude subscription via claude-bridge (bridge-equipped workers only)
+        requestBody.llm_config = {
+          model_provider: 'claude-bridge',
+          model_version: claudeModel || 'opus',
+        };
       } else if (modelChoice === 'byok') {
         // BYOK: send user's provider + model + API key
         const llmConfig = {};
@@ -939,7 +951,38 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                   </div>
                 )}
 
-                {/* Option 2: BYOK */}
+                {/* Option 2: Claude via platform subscription (claude-bridge) */}
+                <label style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
+                  border: `1.5px solid ${modelChoice === 'claude' ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: '6px', cursor: 'pointer',
+                  background: modelChoice === 'claude' ? 'var(--bg-tertiary)' : 'transparent',
+                }}>
+                  <input type="radio" name="modelChoice" value="claude" checked={modelChoice === 'claude'}
+                    onChange={() => { setModelChoice('claude'); setApiKey(''); setCodexToken(''); }}
+                    style={{ marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.modelChoiceClaude}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{t.modelChoiceClaudeDesc}</div>
+                  </div>
+                </label>
+
+                {/* Claude: model selector */}
+                {modelChoice === 'claude' && (
+                  <div style={{ marginLeft: '28px', marginBottom: '2px' }}>
+                    <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.82rem', fontWeight: 600 }}>
+                      {language === 'zh' ? '模型版本' : 'Model Version'}
+                    </label>
+                    <select value={claudeModel} onChange={(e) => setClaudeModel(e.target.value)}
+                      style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
+                      <option value="">opus ({language === 'zh' ? '默认，最强' : 'default, most capable'})</option>
+                      <option value="sonnet">sonnet ({language === 'zh' ? '均衡' : 'balanced'})</option>
+                      <option value="haiku">haiku ({language === 'zh' ? '最快' : 'fastest'})</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Option 3: BYOK */}
                 <label style={{
                   display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
                   border: `1.5px solid ${modelChoice === 'byok' ? 'var(--accent)' : 'var(--border)'}`,
