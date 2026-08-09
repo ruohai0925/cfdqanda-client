@@ -41,7 +41,7 @@ const strings = {
     modelVersion: '模型版本',
     apiKey: 'API Key',
     apiKeyHint: '仅用于本次任务，提交后立即从服务器删除',
-    modelChoiceDefault: 'Codex (gpt-5.5)',
+    modelChoiceDefault: 'Codex (gpt-5.6-sol)',
     modelChoiceDefaultDesc: '平台提供 · 每人每天 {limit} 次',
     dailyUsage: '今日已用 {used}/{limit} 次',
     dailyUsageExhausted: '今日额度已用完，请明天再试或使用 BYOK',
@@ -170,7 +170,7 @@ const strings = {
     modelVersion: 'Model Version',
     apiKey: 'API Key',
     apiKeyHint: 'Used only for this task. Deleted from server immediately after pickup.',
-    modelChoiceDefault: 'Codex (gpt-5.5)',
+    modelChoiceDefault: 'Codex (gpt-5.6-sol)',
     modelChoiceDefaultDesc: 'Platform-provided · {limit} tasks/day per user',
     dailyUsage: 'Used {used}/{limit} today',
     dailyUsageExhausted: 'Daily quota exhausted. Try again tomorrow or use BYOK.',
@@ -292,7 +292,8 @@ function getDaysUntilExpiry(sim) {
 // Users can also type any custom model ID not in this list
 const MODEL_VERSIONS = {
   'openai': [
-    { value: 'gpt-5.5', label: 'gpt-5.5 (flagship, recommended)', isDefault: true },
+    { value: 'gpt-5.6-sol', label: 'gpt-5.6-sol (flagship, recommended)', isDefault: true },
+    { value: 'gpt-5.5', label: 'gpt-5.5' },
     { value: 'gpt-5.4', label: 'gpt-5.4' },
     { value: 'gpt-5.4-mini', label: 'gpt-5.4-mini (fast)' },
     { value: 'gpt-5.3-codex', label: 'gpt-5.3-codex (legacy coding)' },
@@ -350,12 +351,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [solverBackend, setSolverBackend] = useState('openfoam-v10');
 
   // Model settings state
-  // modelChoice: 'default' (openai-codex/gpt-5.5), 'byok' (bring your own key)
+  // modelChoice: 'default' (openai-codex/gpt-5.6-sol), 'byok' (bring your own key)
   const [showModelSettings, setShowModelSettings] = useState(false);
   const [modelChoice, setModelChoice] = useState('default');
   const [modelProvider, setModelProvider] = useState('openai');
   const [modelVersion, setModelVersion] = useState('');
-  const [codexModel, setCodexModel] = useState('');  // '' = default (gpt-5.5)
+  const [codexModel, setCodexModel] = useState('');  // '' = default (gpt-5.6-sol)
   const [claudeModel, setClaudeModel] = useState('');  // '' = default (opus), via claude-bridge
   const [apiKey, setApiKey] = useState('');
   const [codexToken, setCodexToken] = useState('');
@@ -417,7 +418,12 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       const s = JSON.parse(saved);
       if (s.modelChoice) setModelChoice(s.modelChoice);
       if (s.modelProvider) setModelProvider(s.modelProvider);
-      if (s.codexModel !== undefined) setCodexModel(s.codexModel);
+      // Coerce saved picks that are no longer offered (gpt-5.3-codex / gpt-5.2 are
+      // rejected by ChatGPT/Codex accounts; gpt-5.4-mini was dropped) back to default.
+      if (s.codexModel !== undefined) {
+        const dropped = ['gpt-5.3-codex', 'gpt-5.2', 'gpt-5.4-mini'];
+        setCodexModel(dropped.includes(s.codexModel) ? '' : s.codexModel);
+      }
       if (s.claudeModel !== undefined) setClaudeModel(s.claudeModel === 'haiku' ? '' : s.claudeModel);
       if (s.modelVersion !== undefined) setModelVersion(s.modelVersion);
       if (s.solverBackend) setSolverBackend(s.solverBackend);
@@ -780,7 +786,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         if (baseUrl) llmConfig.base_url = baseUrl;
         requestBody.llm_config = llmConfig;
       }
-      // modelChoice === 'default': send NO llm_config → worker uses openai-codex/gpt-5.5
+      // modelChoice === 'default': send NO llm_config → worker uses openai-codex/gpt-5.6-sol
       // Pre-run end time
       if (showPreRunSettings && preRunEndTime !== '') {
         requestBody.pre_run_end_time = parseInt(preRunEndTime, 10);
@@ -927,11 +933,11 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       </label>
                       <select value={codexModel} onChange={(e) => setCodexModel(e.target.value)}
                         style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
-                        <option value="">gpt-5.5 ({language === 'zh' ? '默认，推荐' : 'default, recommended'})</option>
+                        {/* 2026-08-01: probed against the Codex subscription endpoint —
+                            gpt-5.3-codex and gpt-5.2 are rejected by ChatGPT accounts, removed. */}
+                        <option value="">gpt-5.6-sol ({language === 'zh' ? '默认，推荐' : 'default, recommended'})</option>
+                        <option value="gpt-5.5">gpt-5.5</option>
                         <option value="gpt-5.4">gpt-5.4</option>
-                        <option value="gpt-5.4-mini">gpt-5.4-mini ({language === 'zh' ? '快速' : 'fast'})</option>
-                        <option value="gpt-5.3-codex">gpt-5.3-codex ({language === 'zh' ? '旧版' : 'legacy'})</option>
-                        <option value="gpt-5.2">gpt-5.2</option>
                       </select>
                     </div>
                     {/* Optional Codex token */}
