@@ -9,7 +9,7 @@ import { formatFileSize } from './utils/fileUtils';
 const strings = {
   zh: {
     newSimulationTitle: '创建新的仿真任务',
-    promptPlaceholder: '请在这里输入你的仿真需求...',
+    promptPlaceholder: '描述越具体，成功率越高（400 字以上最佳）。建议写清：\n• 几何与尺寸（如 1m×1m 方腔，二维）\n• 网格（如 20×20×1）\n• 边界条件（入口/出口/壁面，速度或压力值）\n• 物性与求解器（如不可压层流 icoFoam，nu=1e-5）\n• 时间设置（起止时间、时间步、输出间隔）\n\n不确定怎么写？点下方「示例 Prompt」直接填入再改。',
     submitButton: '提交任务',
     submittingButton: '提交中...',
     historyTitle: '历史记录',
@@ -138,7 +138,7 @@ const strings = {
   },
   en: {
     newSimulationTitle: 'Create a new simulation task',
-    promptPlaceholder: 'Enter your simulation requirements here...',
+    promptPlaceholder: 'The more specific, the higher the success rate (400+ chars works best). Try to include:\n• Geometry & dimensions (e.g. 1m x 1m cavity, 2D)\n• Mesh (e.g. 20 x 20 x 1)\n• Boundary conditions (inlet/outlet/walls, velocity or pressure values)\n• Properties & solver (e.g. incompressible laminar icoFoam, nu=1e-5)\n• Time settings (start/end time, time step, write interval)\n\nNot sure how to phrase it? Click an Example Prompt below and edit it.',
     submitButton: 'Submit Task',
     submittingButton: 'Submitting...',
     historyTitle: 'History',
