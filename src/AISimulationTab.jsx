@@ -115,6 +115,11 @@ const strings = {
     errorCodexQuota: '平台 Codex 额度暂时用完，每几小时会自动恢复，请稍等后重试，或使用 BYOK 自带 API Key。',
     errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
     errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
+    errorAuthPlatform: '平台默认模型暂时不可用（认证失败），管理员已收到通知。你可以先用 BYOK 自带 API Key 继续。',
+    errorAuthByok: '你的 API Key 无效或已过期，请到服务商后台核对后重新提交。',
+    errorBridgeAuth: '平台的订阅版 Claude 桥接未认证（登录已过期），管理员已收到通知。请改用默认模型，或使用 BYOK 自带 API Key。',
+    errorLlmUpstream: 'LLM 网关返回了临时错误（5xx），Foam-Agent 不会自动重试，所以任务提前结束。这不是你 prompt 的问题，直接重新提交即可。',
+    errorLlmResponse: 'LLM 返回了空的或被截断的响应，Foam-Agent 未重试即停止。这是平台侧的瞬时问题，不是你 prompt 的问题，直接重新提交即可。',
     errorTimeout: '仿真未在限定时间内收敛。建议放宽残差标准、简化模型，或延长超时时间。',
     errorOOM: '网格过大导致内存不足（OOM）。建议简化几何、降低网格密度，或上传更精简的 .msh 文件。',
     errorDiskExceeded: '仿真输出超过磁盘限制。建议减少输出频率（增大 writeInterval）或简化模型。',
@@ -244,6 +249,11 @@ const strings = {
     errorCodexQuota: 'Platform Codex quota temporarily exhausted. It resets every few hours — please wait and try again, or use BYOK with your own API key.',
     errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
     errorAuth: 'LLM API authentication failed. Please check your API key.',
+    errorAuthPlatform: 'Platform default model is temporarily unavailable (authentication failed). The administrator has been notified — meanwhile you can use BYOK with your own API key.',
+    errorAuthByok: 'Your API key is invalid or expired. Please verify it in your provider dashboard and resubmit.',
+    errorBridgeAuth: "The platform's subscription-Claude bridge is not authenticated (its login session expired). The administrator has been notified. Please re-run with the default model, or use BYOK with your own API key.",
+    errorLlmUpstream: 'The LLM gateway returned a temporary error (5xx) and Foam-Agent does not retry these, so the run stopped early. This is not a problem with your prompt — please just resubmit.',
+    errorLlmResponse: 'The LLM returned an empty or truncated response and Foam-Agent stopped instead of retrying. This is a transient platform-side issue, not a problem with your prompt — please just resubmit.',
     errorTimeout: 'Simulation did not converge within the time limit. Try relaxing residual targets, simplifying the model, or increasing the timeout.',
     errorOOM: 'Out of memory (OOM) — mesh too large. Try simplifying geometry, reducing mesh density, or uploading a lighter .msh file.',
     errorDiskExceeded: 'Simulation output exceeded disk limit. Try reducing output frequency (increase writeInterval) or simplifying the model.',
@@ -1511,6 +1521,11 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         {sim.result_data.error_category === 'codex_quota_exceeded' ? t.errorCodexQuota
                           : sim.result_data.error_category === 'rate_limit' ? t.errorRateLimit
                           : sim.result_data.error_category === 'auth_error' ? t.errorAuth
+                          : sim.result_data.error_category === 'auth_error_platform' ? t.errorAuthPlatform
+                          : sim.result_data.error_category === 'auth_error_byok' ? t.errorAuthByok
+                          : sim.result_data.error_category === 'bridge_auth_error' ? t.errorBridgeAuth
+                          : sim.result_data.error_category === 'llm_upstream_error' ? t.errorLlmUpstream
+                          : sim.result_data.error_category === 'llm_response_error' ? t.errorLlmResponse
                           : sim.result_data.error_category === 'timeout' ? t.errorTimeout
                           : sim.result_data.error_category === 'oom' ? t.errorOOM
                           : sim.result_data.error_category === 'disk_exceeded' ? t.errorDiskExceeded
