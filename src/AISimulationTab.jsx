@@ -112,6 +112,8 @@ const strings = {
     browseFilesReviewButton: '查看生成文件',
     browseFilesButton: '浏览文件',
     errorReason: '失败原因',
+    warningLabel: '注意',
+    warnVisualizationTimeout: '求解器已成功算完，结果完整可用；只是在生成图表时到了时间上限，可视化输出可能缺失或不完整。',
     errorCodexQuota: '平台 Codex 额度暂时用完，每几小时会自动恢复，请稍等后重试，或使用 BYOK 自带 API Key。',
     errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
     errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
@@ -246,6 +248,8 @@ const strings = {
     browseFilesReviewButton: 'View Generated Files',
     browseFilesButton: 'Browse Files',
     errorReason: 'Reason',
+    warningLabel: 'Note',
+    warnVisualizationTimeout: 'The solver finished successfully and the results are complete — the time limit was only hit while generating plots, so visualization output may be missing or incomplete.',
     errorCodexQuota: 'Platform Codex quota temporarily exhausted. It resets every few hours — please wait and try again, or use BYOK with your own API key.',
     errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
     errorAuth: 'LLM API authentication failed. Please check your API key.',
@@ -1504,6 +1508,26 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         )}
                       </div>
                     </div>
+
+                    {/* Warning — a completed run that carries a caveat, e.g. the
+                        solver finished but visualization hit the time limit. */}
+                    {sim.status === 'completed' && sim.result_data?.warning && (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                        border: '1px solid rgba(255, 193, 7, 0.35)',
+                        background: 'rgba(255, 193, 7, 0.08)',
+                        color: 'var(--warning, #b8860b)',
+                      }}>
+                        <strong>{t.warningLabel}:</strong>{' '}
+                        {sim.result_data.warning_category === 'visualization_timeout'
+                          ? t.warnVisualizationTimeout
+                          : sim.result_data.warning}
+                      </div>
+                    )}
 
                     {/* Error reason — shown for failed/cancelled tasks */}
                     {(sim.status === 'failed' || sim.status === 'cancelled') && sim.result_data?.error && (
