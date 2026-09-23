@@ -14,6 +14,7 @@ const strings = {
 • 可选数据：您主动提供的任务评价（整体评价和阶段评价）、文件反馈、专家咨询需求
 • 上传文件：如您上传了自定义网格文件（.msh），该文件存储在 Supabase Storage 中，随关联任务一起删除
 • 如您选择"使用自己的 API Key"，该 Key 仅用于当前任务，Worker 读取后立即从数据库中删除
+• 访问统计：匿名会话标识（随机生成、存于浏览器 sessionStorage，关闭标签页即失效）、访问的页面名称、来源网站的域名、进入时间与最后活跃时间。**不包含** IP 地址、设备指纹或浏览器 User-Agent
 • 隐私政策同意时间戳：记录您同意本政策的时间`,
       },
       {
@@ -22,7 +23,10 @@ const strings = {
 • Supabase 认证令牌（用于保持登录状态）
 • 用户保存的模型和执行设置（如 LLM 提供商、模型版本、流水线模式等，不含 API Key 等敏感信息）
 
-我们不使用任何第三方追踪 Cookie、广告 SDK 或用户行为分析工具。您的浏览行为不会被追踪或分析。`,
+以及 sessionStorage 中的一项：
+• 匿名访问会话标识（随机生成，关闭标签页即清除）
+
+我们不使用任何第三方追踪 Cookie、广告 SDK，也不使用 Google Analytics 等第三方用户行为分析工具。我们仅在自有数据库中记录匿名的页面访问统计（见第 1 节"访问统计"），用于了解平台各页面的使用情况；该记录不含 IP 地址与设备信息，不用于跨站追踪，也不会对外共享或用于广告。`,
       },
       {
         heading: '3. 第三方服务',
@@ -124,6 +128,7 @@ const strings = {
 • Optional data: task ratings (overall and per-stage), file feedback, and expert consultation requests you voluntarily provide
 • Uploaded files: if you upload a custom mesh file (.msh), it is stored in Supabase Storage and deleted together with the associated task
 • If you choose "Bring Your Own Key", the API key is used only for the current task and deleted from the database immediately after the Worker reads it
+• Visit statistics: an anonymous session identifier (randomly generated, held in the browser's sessionStorage and discarded when the tab closes), the in-app page visited, the domain of the referring site, and the first and last activity timestamps. This does **not** include your IP address, device fingerprint, or browser User-Agent
 • Privacy policy consent timestamp: records when you agreed to this policy`,
       },
       {
@@ -132,7 +137,10 @@ const strings = {
 • Supabase authentication token (to maintain your login session)
 • User-saved model and execution settings (e.g. LLM provider, model version, pipeline mode — no sensitive data such as API keys)
 
-We do not use any third-party tracking cookies, advertising SDKs, or user behavior analytics tools. Your browsing behavior is not tracked or analyzed.`,
+And a single item in sessionStorage:
+• An anonymous visit session identifier (randomly generated, cleared when the tab closes)
+
+We do not use any third-party tracking cookies, advertising SDKs, or third-party behaviour analytics such as Google Analytics. We do keep anonymous page-visit statistics in our own database (see "Visit statistics" in section 1) to understand how the platform's pages are used. Those records contain no IP address or device information, are never used for cross-site tracking, and are not shared or used for advertising.`,
       },
       {
         heading: '3. Third-Party Services',

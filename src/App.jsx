@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { supabase } from './supabaseClient'
+import { trackPage, stopTracking } from './analytics'
 import { Toaster } from 'react-hot-toast'
 import Auth from './Auth'
 import MainLayout from './MainLayout'
@@ -35,6 +36,13 @@ function App() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Anonymous visit tracking (see analytics.js). Re-runs when the page changes
+  // or the visitor signs in, so a visit that starts anonymous gets attributed.
+  useEffect(() => {
+    trackPage(currentPage)
+    return () => stopTracking()
+  }, [currentPage, session?.user?.id])
 
   // Listen for hash changes (browser back/forward)
   useEffect(() => {
