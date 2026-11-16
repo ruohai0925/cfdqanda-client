@@ -76,6 +76,16 @@ const strings = {
     meshUploadUploading: '上传网格文件中...',
     meshUploadRemove: '移除',
     meshUploadFailed: '网格文件上传失败',
+    caseUploadLabel: '上传已有 OpenFOAM 算例（可选）',
+    caseUploadHint: '把整个算例目录打成 .zip，最大 100 MB',
+    caseUploadExplain: '已附带算例时，需求可以留空：Foam-Agent 会按原样运行，只在跑不通时做必要修复。也可以写明想改什么（比如换边界条件、延长计算时间）。请先删掉结果时间目录和 processor* 文件夹以减小体积。',
+    caseUploadInvalidType: '请上传 .zip 压缩包',
+    caseUploadTooLarge: '压缩包不能超过 100 MB',
+    caseUploadUploading: '上传算例中...',
+    caseUploadFailed: '算例上传失败',
+    caseUploadAutoOnly: '导入已有算例目前只支持自动模式',
+    errorCaseImportFailed: '上传的算例没能导入。请确认 ZIP 里是一个完整的 OpenFOAM 算例（system/controlDict、constant/ 和 0/ 初始条件）；执行报告里写明了具体被拒的原因。',
+    errorCaseTargetMismatch: '上传的算例是为另一个 OpenFOAM 版本写的。本平台运行 OpenFOAM Foundation v10，ESI/OpenCFD（v2xxx）或其他 Foundation 版本的算例通常需要先改字典。',
     preRunSettings: '执行设置',
     preRunHint: '（可选）选择执行模式和 Pre-Run 验证',
     preRunSteps: 'Pre-Run 步数',
@@ -221,6 +231,16 @@ const strings = {
     meshUploadUploading: 'Uploading mesh file...',
     meshUploadRemove: 'Remove',
     meshUploadFailed: 'Mesh file upload failed',
+    caseUploadLabel: 'Upload an existing OpenFOAM case (optional)',
+    caseUploadHint: 'zip the whole case directory, max 100 MB',
+    caseUploadExplain: 'With a case attached the request may be left empty: Foam-Agent runs it as supplied and repairs only what stops it running. Or say what to change (boundary conditions, end time, ...). Remove result time directories and processor* folders first to keep it small.',
+    caseUploadInvalidType: 'Please upload a .zip archive',
+    caseUploadTooLarge: 'The archive must be less than 100 MB',
+    caseUploadUploading: 'Uploading case...',
+    caseUploadFailed: 'Case upload failed',
+    caseUploadAutoOnly: 'Importing an existing case is available in auto mode only',
+    errorCaseImportFailed: 'The uploaded case could not be imported. Make sure the ZIP holds one complete OpenFOAM case (system/controlDict, constant/ and the 0/ initial conditions); the workflow report shows exactly what was rejected.',
+    errorCaseTargetMismatch: 'The uploaded case is written for a different OpenFOAM version. This platform runs OpenFOAM Foundation v10; cases from ESI/OpenCFD (v2xxx) or other Foundation releases usually need dictionary changes first.',
     preRunSettings: 'Execution Settings',
     preRunHint: '(Optional) Choose execution mode and Pre-Run validation',
     preRunSteps: 'Pre-Run Steps',
@@ -394,6 +414,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [apiKey, setApiKey] = useState('');
   const [codexToken, setCodexToken] = useState('');
   const [meshFile, setMeshFile] = useState(null); // File object or null
+  const [caseFile, setCaseFile] = useState(null); // existing OpenFOAM case (.zip) or null
 
   // Pre-run settings state
   const [showPreRunSettings, setShowPreRunSettings] = useState(false);
@@ -758,8 +779,14 @@ export default function AISimulationTab({ session, language, storageUsage }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!newPrompt.trim()) {
+    // An attached case is a complete specification by itself, so the request
+    // text becomes optional (Foam-Agent then runs it as supplied).
+    if (!newPrompt.trim() && !caseFile) {
       toast.error(t.promptRequired);
+      return;
+    }
+    if (caseFile && pipelineMode !== 'auto') {
+      toast.error(t.caseUploadAutoOnly);
       return;
     }
 
@@ -808,6 +835,22 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         };
       }
 
+      let caseArchiveInfo = null;
+      if (caseFile) {
+        toast.loading(t.caseUploadUploading, { id: 'case-upload' });
+        const caseStoragePath = `case_uploads/${session.user.id}/${Date.now()}_${caseFile.name}`;
+        const { error: caseError } = await supabase.storage
+          .from('simulation_results')
+          .upload(caseStoragePath, caseFile, { contentType: 'application/zip', upsert: false });
+        toast.dismiss('case-upload');
+        if (caseError) throw new Error(t.caseUploadFailed + ': ' + caseError.message);
+        caseArchiveInfo = {
+          storage_path: caseStoragePath,
+          original_name: caseFile.name,
+          size_bytes: caseFile.size,
+        };
+      }
+
       const requestBody = { prompt: newPrompt };
       if (solverBackend !== 'openfoam-v10') {
         requestBody.solver_backend = solverBackend;
@@ -852,6 +895,10 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       if (meshFileInfo) {
         requestBody.mesh_file = meshFileInfo;
       }
+      // Existing case to import
+      if (caseArchiveInfo) {
+        requestBody.case_archive = caseArchiveInfo;
+      }
       // Custom timeout
       if (timeoutMinutes) {
         requestBody.timeout_minutes = parseInt(timeoutMinutes, 10);
@@ -872,6 +919,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
       setNewPrompt('');
       setApiKey('');
       setMeshFile(null);
+      setCaseFile(null);
       fetchDailyUsage();  // refresh remaining count
     } catch (error) {
       toast.error(error.message);
@@ -1349,6 +1397,76 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             )}
           </div>
 
+          {/* Existing case upload — Foam-Agent imports, repairs if needed, and runs it */}
+          <div style={{ margin: '8px 0' }}>
+            <button
+              type="button"
+              onClick={() => !caseFile && document.getElementById('case-file-input')?.click()}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent)',
+                cursor: 'pointer',
+                padding: 0,
+                fontSize: '0.9rem',
+              }}
+            >
+              {caseFile ? '▼' : '▶'} {t.caseUploadLabel}
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                {t.caseUploadHint}
+              </span>
+            </button>
+            <input
+              id="case-file-input"
+              type="file"
+              accept=".zip,application/zip"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.zip')) {
+                  toast.error(t.caseUploadInvalidType);
+                  e.target.value = '';
+                  return;
+                }
+                if (file.size > 100 * 1024 * 1024) {
+                  toast.error(t.caseUploadTooLarge);
+                  e.target.value = '';
+                  return;
+                }
+                setCaseFile(file);
+                e.target.value = '';
+              }}
+            />
+            {caseFile && (
+              <>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  marginTop: '6px', fontSize: '0.85rem',
+                  padding: '6px 10px', background: 'var(--bg-tertiary)',
+                  borderRadius: 'var(--radius-md)', border: '1px solid var(--accent)',
+                }}>
+                  <span style={{ color: 'var(--success, #22c55e)' }}>&#10003;</span>
+                  <span>{caseFile.name}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    ({(caseFile.size / (1024 * 1024)).toFixed(1)} MB)
+                  </span>
+                  <button type="button" onClick={() => setCaseFile(null)}
+                    style={{
+                      marginLeft: 'auto', fontSize: '0.78rem',
+                      padding: '2px 10px', cursor: 'pointer',
+                      background: 'none', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)',
+                    }}
+                  >{t.meshUploadRemove}</button>
+                </div>
+                <div style={{ marginTop: '6px', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  {t.caseUploadExplain}
+                </div>
+              </>
+            )}
+          </div>
+
           <textarea
             className="inputField prompt-textarea"
             placeholder={t.promptPlaceholder}
@@ -1395,7 +1513,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
               {t.dailyUsage.replace('{used}', String(dailyUsage.used)).replace('{limit}', String(dailyUsage.limit))}
             </div>
           )}
-          <button className="button-block" type="submit" disabled={loading || !newPrompt.trim() || (modelChoice !== 'byok' && dailyUsage && dailyUsage.remaining <= 0)}>
+          <button className="button-block" type="submit" disabled={loading || (!newPrompt.trim() && !caseFile) || (modelChoice !== 'byok' && dailyUsage && dailyUsage.remaining <= 0)}>
             {loading ? t.submittingButton : t.submitButton}
           </button>
           </form>
@@ -1602,6 +1720,8 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           : sim.result_data.error_category === 'static_review_failed' ? t.errorStaticReview
                           : sim.result_data.error_category === 'preparation_failed' ? t.errorPreparation
                           : sim.result_data.error_category === 'platform_resources' ? t.errorPlatformResources
+                          : sim.result_data.error_category === 'case_import_failed' ? t.errorCaseImportFailed
+                          : sim.result_data.error_category === 'case_target_mismatch' ? t.errorCaseTargetMismatch
                           : sim.result_data.error_category === 'timeout' ? t.errorTimeout
                           : sim.result_data.error_category === 'oom' ? t.errorOOM
                           : sim.result_data.error_category === 'disk_exceeded' ? t.errorDiskExceeded
