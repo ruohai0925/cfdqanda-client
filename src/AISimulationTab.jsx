@@ -114,6 +114,15 @@ const strings = {
     errorReason: '失败原因',
     warningLabel: '注意',
     warnVisualizationTimeout: '求解器已成功算完，结果完整可用；只是在生成图表时到了时间上限，可视化输出可能缺失或不完整。',
+    warnVisualizationFailed: '仿真已成功算完，结果完整可用；只是 Foam-Agent 没能生成图表。',
+    errorRepairNoProgress: 'Foam-Agent 停止了自动修复：最后一次修复没有改动任何内容，说明它遇到了自己改不了的错误。可以先看执行报告和下方提示找到卡住的位置；把几何、边界条件、求解器写得更具体或更简单，通常就能过去。',
+    errorReviewExhausted: '算例在达到自动“审查-修复”轮次上限后仍未跑通。执行报告里有最后一次的错误；把求解器、边界条件、时间步写得更明确通常有帮助。',
+    errorStaticReview: '生成的算例没有通过 Foam-Agent 的运行前审查，因此没有执行。审查指出的问题见执行报告。',
+    errorPreparation: 'Foam-Agent 没能完成准备阶段。这通常是平台侧的问题，与您的需求无关——请重试，本次不计入每日额度。',
+    errorPlatformResources: 'Foam-Agent 需要的平台资源暂时不可用，这是我们这边的问题——请稍后重试，本次不计入每日额度。',
+    viewReport: '执行报告',
+    reportTitle: 'Foam-Agent 执行报告',
+    reportLoadFailed: '执行报告加载失败',
     errorCodexQuota: '平台 Codex 额度暂时用完，每几小时会自动恢复，请稍等后重试，或使用 BYOK 自带 API Key。',
     errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
     errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
@@ -250,6 +259,15 @@ const strings = {
     errorReason: 'Reason',
     warningLabel: 'Note',
     warnVisualizationTimeout: 'The solver finished successfully and the results are complete — the time limit was only hit while generating plots, so visualization output may be missing or incomplete.',
+    warnVisualizationFailed: 'The simulation finished successfully and the results are complete — Foam-Agent just could not generate the plots.',
+    errorRepairNoProgress: 'Foam-Agent stopped repairing the case because its last fix changed nothing — it hit an error it cannot correct on its own. The workflow report and the hints below show where it got stuck; a simpler or more fully specified request (geometry, boundary conditions, solver) usually gets past it.',
+    errorReviewExhausted: 'The case still failed after the maximum number of automatic review-and-fix rounds. The workflow report shows the last error; being explicit about the solver, boundary conditions and time step usually helps.',
+    errorStaticReview: 'The generated case did not pass Foam-Agent\'s pre-run review, so it was not executed. See the workflow report for what the review flagged.',
+    errorPreparation: 'Foam-Agent could not finish preparing the case. This is usually a platform-side problem, not your request — please try again; this run does not count toward your daily quota.',
+    errorPlatformResources: 'A platform resource Foam-Agent needs was unavailable. That is on our side — please try again shortly; this run does not count toward your daily quota.',
+    viewReport: 'Workflow report',
+    reportTitle: 'Foam-Agent workflow report',
+    reportLoadFailed: 'Could not load the workflow report',
     errorCodexQuota: 'Platform Codex quota temporarily exhausted. It resets every few hours — please wait and try again, or use BYOK with your own API key.',
     errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
     errorAuth: 'LLM API authentication failed. Please check your API key.',
@@ -358,6 +376,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   const [newPrompt, setNewPrompt] = useState('');
   const [selectedSimulation, setSelectedSimulation] = useState(null);
   const [showFileBrowser, setShowFileBrowser] = useState(false);
+  const [reportView, setReportView] = useState(null); // { id, html } of the open workflow report
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedPrompts, setExpandedPrompts] = useState(new Set());
 
@@ -484,6 +503,23 @@ export default function AISimulationTab({ session, language, storageUsage }) {
     const interval = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(interval);
   }, [simulations]);
+
+  // Foam-Agent's HTML workflow report (output/.foamagent/workflow_report.html).
+  // Fetched as text and shown in a sandboxed iframe: the report carries LLM
+  // output and solver logs, and a blob: URL would run it with this app's
+  // origin — able to read the signed-in session. An empty sandbox gives it an
+  // opaque origin and no scripts; it needs neither (it ships its own strict
+  // CSP and uses <details> for collapsing).
+  const handleViewReport = async (simulation) => {
+    try {
+      const path = `${simulation.result_data.storage_base_path}/${simulation.result_data.workflow_report}`;
+      const { data, error } = await supabase.storage.from('simulation_results').download(path);
+      if (error) throw error;
+      setReportView({ id: simulation.id, html: await data.text() });
+    } catch (err) {
+      toast.error(`${t.reportLoadFailed}: ${err.message || err}`);
+    }
+  };
 
   // Download ZIP
   const handleDownloadZip = async (simulation) => {
@@ -1497,6 +1533,15 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                             {t.browseFilesButton}
                           </button>
                         )}
+                        {sim.result_data?.workflow_report && sim.result_data?.storage_base_path && (
+                          <button
+                            className="download-link"
+                            onClick={() => handleViewReport(sim)}
+                            style={{ cursor: 'pointer', border: 'none' }}
+                          >
+                            {t.viewReport}
+                          </button>
+                        )}
                         {sim.result_data?.zip_storage_path && (
                           <button
                             className="download-link"
@@ -1525,7 +1570,9 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                         <strong>{t.warningLabel}:</strong>{' '}
                         {sim.result_data.warning_category === 'visualization_timeout'
                           ? t.warnVisualizationTimeout
-                          : sim.result_data.warning}
+                          : sim.result_data.warning_category === 'visualization_failed'
+                            ? t.warnVisualizationFailed
+                            : sim.result_data.warning}
                       </div>
                     )}
 
@@ -1550,6 +1597,11 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           : sim.result_data.error_category === 'bridge_auth_error' ? t.errorBridgeAuth
                           : sim.result_data.error_category === 'llm_upstream_error' ? t.errorLlmUpstream
                           : sim.result_data.error_category === 'llm_response_error' ? t.errorLlmResponse
+                          : sim.result_data.error_category === 'repair_no_progress' ? t.errorRepairNoProgress
+                          : sim.result_data.error_category === 'review_loop_exhausted' ? t.errorReviewExhausted
+                          : sim.result_data.error_category === 'static_review_failed' ? t.errorStaticReview
+                          : sim.result_data.error_category === 'preparation_failed' ? t.errorPreparation
+                          : sim.result_data.error_category === 'platform_resources' ? t.errorPlatformResources
                           : sim.result_data.error_category === 'timeout' ? t.errorTimeout
                           : sim.result_data.error_category === 'oom' ? t.errorOOM
                           : sim.result_data.error_category === 'disk_exceeded' ? t.errorDiskExceeded
@@ -1627,6 +1679,24 @@ export default function AISimulationTab({ session, language, storageUsage }) {
         )}
         </div>
       </div>
+
+      {/* Workflow report modal */}
+      {reportView && (
+        <div className="file-browser-modal-overlay" onClick={() => setReportView(null)}>
+          <div className="file-browser-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="file-browser-header">
+              <h3>{t.reportTitle} · #{reportView.id}</h3>
+              <button className="file-browser-close" onClick={() => setReportView(null)}>×</button>
+            </div>
+            <iframe
+              title={t.reportTitle}
+              sandbox=""
+              srcDoc={reportView.html}
+              style={{ flex: 1, width: '100%', minHeight: '70vh', border: 'none', background: '#fff' }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* File browser modal (works for completed and checkpoint status) */}
       {showFileBrowser && selectedSimulation && selectedSimulation.result_data?.file_tree && (
