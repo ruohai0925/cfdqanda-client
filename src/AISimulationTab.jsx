@@ -134,6 +134,7 @@ const strings = {
     reportTitle: 'Foam-Agent 执行报告',
     reportLoadFailed: '执行报告加载失败',
     errorCodexQuota: '平台 Codex 额度暂时用完，每几小时会自动恢复，请稍等后重试，或使用 BYOK 自带 API Key。',
+    errorCodexQuotaUntil: '平台共享模型额度已用完，将于 {time} 恢复；本次不计入每日额度。在此之前请使用 BYOK 自带 API Key。',
     errorRateLimit: 'LLM API 速率限制或额度超限，请稍后重试或更换 API Key / 模型。',
     errorAuth: 'LLM API 认证失败，请检查你的 API Key。',
     errorAuthPlatform: '平台默认模型暂时不可用（认证失败），管理员已收到通知。你可以先用 BYOK 自带 API Key 继续。',
@@ -289,6 +290,7 @@ const strings = {
     reportTitle: 'Foam-Agent workflow report',
     reportLoadFailed: 'Could not load the workflow report',
     errorCodexQuota: 'Platform Codex quota temporarily exhausted. It resets every few hours — please wait and try again, or use BYOK with your own API key.',
+    errorCodexQuotaUntil: 'The platform\'s shared model quota is used up until {time}; this run did not count toward your daily quota. Until then, please use BYOK with your own API key.',
     errorRateLimit: 'LLM API rate limit or quota exceeded. Please try again later, or use a different API key / model.',
     errorAuth: 'LLM API authentication failed. Please check your API key.',
     errorAuthPlatform: 'Platform default model is temporarily unavailable (authentication failed). The administrator has been notified — meanwhile you can use BYOK with your own API key.',
@@ -1707,7 +1709,11 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       }}>
                         <strong>{t.errorReason}:</strong>{' '}
                         {/* Show localized message for known error categories */}
-                        {sim.result_data.error_category === 'codex_quota_exceeded' ? t.errorCodexQuota
+                        {sim.result_data.error_category === 'codex_quota_exceeded'
+                          ? (sim.result_data.quota_resets_at
+                            // The weekly limit can be days away; say when, in the viewer's time zone.
+                            ? t.errorCodexQuotaUntil.replace('{time}', new Date(sim.result_data.quota_resets_at).toLocaleString())
+                            : t.errorCodexQuota)
                           : sim.result_data.error_category === 'rate_limit' ? t.errorRateLimit
                           : sim.result_data.error_category === 'auth_error' ? t.errorAuth
                           : sim.result_data.error_category === 'auth_error_platform' ? t.errorAuthPlatform
