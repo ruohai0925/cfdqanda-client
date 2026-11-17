@@ -87,7 +87,17 @@ If your simulation uses a custom mesh (e.g., complex airfoil, external geometry)
 
 > **Note**: Only Gmsh ASCII 2.2 format (`.msh`) is currently supported. If your geometry can be described using blockMesh or snappyHexMesh built-in searchable geometries (box, cylinder, sphere), no mesh upload is needed.
 
-### 3.3 Example Prompts
+### 3.3 Importing an Existing OpenFOAM Case (Optional)
+
+If you already have a case (your own, a tutorial, a colleague's), you don't need to describe it in thousands of words — upload it:
+
+- Zip the whole case directory (with `0/`, `constant/`, `system/`) as a `.zip`, up to 100 MB
+- Choose it under "Upload an existing OpenFOAM case (optional)". The prompt can be left empty (it defaults to "run this case"), or describe what to change, e.g. "set the inlet velocity to 2 m/s"
+- End-to-End mode only
+
+Foam-Agent checks, runs and repairs an imported case directly, which is usually **much faster and cheaper** than generating one from text. The case must be written for OpenFOAM Foundation v10; ESI (v2xxx) dictionaries usually need changes first.
+
+### 3.4 Example Prompts
 
 The platform provides preset examples — click any to auto-fill. Start with simple cases. More tested prompts are available at the [FoamGPT Dataset](https://huggingface.co/datasets/LeoYML/FoamGPT).
 
@@ -99,9 +109,11 @@ The platform provides preset examples — click any to auto-fill. Start with sim
 | **Natural Convection** | Heat transfer + buoyancy | buoyantFoam | Heat |
 | **Tandem Wing** | Incompressible turbulent (.msh required) | simpleFoam | Custom Mesh |
 
-### 3.4 Submitting
+### 3.5 Submitting
 
-After writing your prompt, click "Submit Task". If a .msh file is attached, the system will upload the mesh first, then submit the task. The task will enter the queue immediately.
+After writing your prompt, click "Submit Task". If a mesh or case file is attached, the system uploads it first, then submits the task. The task will enter the queue immediately.
+
+> **Tip**: if the request involves coupled physics, phase change, a custom solver and the like, a hint below the prompt box suggests a 120-minute timeout — Foam-Agent sometimes writes and compiles its own solver for these, and the 60-minute default is often not enough.
 
 ---
 
@@ -113,9 +125,17 @@ Click "Model Selection" to expand the settings panel. The platform offers two mo
 
 - **Cost**: Free, covered by the platform
 - **Limit**: 10 tasks per user per day (resets at UTC midnight)
-- **Available models**: gpt-5.3-codex (default, recommended), gpt-5.2-codex, gpt-5.2
+- **Available models**: gpt-5.6-sol (default, recommended), gpt-5.5, gpt-5.4
 - **Codex Token** (optional): If you have your own ChatGPT Codex Token, enter it to bypass the platform quota
 - **Best for**: Most users, no extra configuration needed
+
+> The platform's Codex quota is shared. If it runs out, the failure message says **exactly when it comes back**, and such failures don't count toward your daily tasks.
+
+### 4.1b Claude (Platform-Provided)
+
+- **Cost**: Free, covered by the platform
+- **Models**: Opus (default, most capable, 2 per user per day), Sonnet (balanced, 5 per user per day)
+- If the platform's Claude quota runs out, the task fails with that reason and doesn't count toward your daily tasks; use the default model or BYOK instead
 
 ### 4.2 Bring Your Own Key (BYOK)
 
@@ -123,8 +143,8 @@ Use your own API key with no platform quota restrictions. The following LLM prov
 
 | Provider | Available Models | API Key Format |
 |----------|-----------------|----------------|
-| **OpenAI** | gpt-5.4, gpt-5-mini, gpt-4o, gpt-4o-mini, gpt-4.1, o3, o4-mini, etc. | Starts with `sk-` |
-| **Anthropic** | claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5 | Starts with `sk-ant-` |
+| **OpenAI** | gpt-5.6-sol, gpt-5.5, gpt-5.4, gpt-5-mini, gpt-4.1, o3, o4-mini, etc. | Starts with `sk-` |
+| **Anthropic** | claude-sonnet-5-5, claude-opus-5-5, claude-haiku-5-5, etc. | Starts with `sk-ant-` |
 | **DeepSeek** | deepseek-chat (V3.2), deepseek-reasoner (R1) | Any format |
 | **Qwen (Tongyi)** | qwen-plus, qwen-turbo, qwen-max, qwen3.5-plus | Any format |
 
@@ -187,7 +207,7 @@ After submission, a task goes through the following status transitions:
 | Status | Meaning | What you need to do |
 |--------|---------|---------------------|
 | **queued** | Waiting in queue | Just wait. The UI shows your queue position (e.g., "Position #2") and elapsed wait time |
-| **running** | Simulation in progress | Just wait |
+| **running** | Simulation in progress | Just wait. The card shows the current stage: generating mesh → writing case files → running → fixing problems (round N) → visualizations |
 | **checkpoint** | Paused for your confirmation (Interactive mode only) | Review intermediate results, click "Continue" or "Abort" |
 | **completed** | Simulation finished | View results, download files, provide feedback |
 | **failed** | Simulation failed | Check the error reason displayed on the task card |
@@ -203,12 +223,18 @@ When a task fails, the system displays the specific reason on the task card:
 
 | Error Type | Message | Suggestion |
 |------------|---------|------------|
-| Codex quota exhausted | "Platform Codex shared quota exceeded" | Try again later or switch models |
+| Platform quota exhausted (Codex / Claude) | Says when the quota comes back | Retry then, or switch model / BYOK. **Not counted toward your daily tasks** |
 | API rate limit | "LLM API rate limit or quota exceeded" | Try again later or use a different API key |
 | Authentication failure | "LLM API authentication failed" | Check that your API key is correct |
+| Repairs made no progress | Errors unchanged over several repair rounds | Read the error in the logs, add the relevant physics settings to your request, and resubmit |
+| Review rounds exhausted | Repair limit reached without a fix | Simplify the problem or split the request into smaller steps |
 | Timeout | "Simulation did not converge within the time limit" | Relax residual targets, simplify the model, or increase timeout in execution settings |
 | Out of Memory (OOM) | "Mesh too large, out of memory" | Simplify geometry, reduce mesh density, or upload a lighter .msh file |
 | Disk exceeded | "Output exceeded disk limit" | Reduce output frequency (increase writeInterval) or simplify the model |
+| Case archive unusable | Not a valid .zip, empty, or too large | Check it and upload again |
+| Platform-side problem | Preparation failed, could not fetch your upload, etc. | Just retry. **Not counted toward your daily tasks** |
+
+> Failed tasks usually still have an "Workflow report" (see 7.3) with a detailed record of every Foam-Agent step — often the fastest way to see what went wrong.
 
 ### Cancelling a Task
 
@@ -234,6 +260,11 @@ Click the "Browse Files" button to open the file browser:
 ### 7.2 Download ZIP
 
 Click "Download Results (.zip)" to download all simulation files as a single compressed archive.
+
+
+### 7.3 Workflow Report
+
+Click "Workflow report" to open the report Foam-Agent writes: which reference case it chose, which files it wrote, what happened in each run and repair round, and why it finally succeeded or stopped. When a task fails, this is the quickest place to find the cause.
 
 ---
 
@@ -289,7 +320,7 @@ When using Interactive mode, you can rate each checkpoint separately:
 |------|-------|-------|
 | Daily tasks (free models) | **10 per day** | Resets at UTC midnight. BYOK mode is unlimited |
 | Simulation timeout | **60 minutes** (configurable) | Choose 20/40/60/120 min in execution settings |
-| Per-task disk limit | **400 MB** | Task auto-terminated if exceeded |
+| Per-task disk limit | **1 GB** | Task auto-terminated if exceeded |
 | Mesh file size | **100 MB** | Max upload size for .msh files |
 | Submission rate | **5 per minute** | Per IP address |
 
@@ -298,8 +329,8 @@ When using Interactive mode, you can rate each checkpoint separately:
 | Item | Limit |
 |------|-------|
 | Total storage per user | **2 GB** |
-| Completed task retention | **14 days** before automatic deletion |
-| Failed/cancelled task retention | **7 days** before automatic deletion |
+| Completed task retention | **90 days** before automatic deletion |
+| Failed/cancelled task retention | **30 days** before automatic deletion |
 
 > **Tip**: Your current cloud storage usage is displayed in the top-right corner of the page. If you run low on storage, you can manually delete old tasks to free up space. Each task card has a "Delete" button in the upper-right corner. You have an 8-second undo window after deletion.
 
@@ -307,11 +338,12 @@ When using Interactive mode, you can rate each checkpoint separately:
 
 | Model | Cost | Limit |
 |-------|------|-------|
-| gpt-5.3-codex (default, recommended) | Free | 10 per user per day |
-| gpt-5.2-codex | Free | 10 per user per day |
-| gpt-5.2 | Free | 10 per user per day |
+| gpt-5.6-sol (default, recommended) | Free | 10 per user per day |
+| gpt-5.5 / gpt-5.4 | Free | 10 per user per day |
+| Claude Opus | Free | 2 per user per day |
+| Claude Sonnet | Free | 5 per user per day |
 
-All models above are provided via ChatGPT Plus subscription. Model costs under BYOK mode are borne by the user.
+These models are provided from the platform's subscriptions; tasks that fail for platform-side reasons (quota exhausted, platform faults) don't count toward the daily limit. Model costs under BYOK mode are borne by the user.
 
 ---
 
@@ -354,8 +386,8 @@ By using the Foam-Agent platform, you agree to our Privacy Policy. You are requi
 Regarding your data, we commit to the following:
 
 - **API Keys**: Used only for the current task; immediately deleted from the database after the worker reads them
-- **Mesh files**: Uploaded .msh files are stored on Supabase cloud and deleted together with the associated task
-- **Simulation data**: Stored on Supabase cloud; completed tasks are retained for 14 days, failed/cancelled tasks for 7 days, and soft-deleted tasks are permanently purged after 3 days
+- **Uploaded files**: Uploaded .msh meshes and .zip cases are stored on Supabase cloud and deleted together with the associated task
+- **Simulation data**: Stored on Supabase cloud; completed tasks are retained for 90 days, failed/cancelled tasks for 30 days, and deleted tasks are permanently purged after 7 days
 - **Log sanitization**: API keys in log files are automatically replaced with `[REDACTED]` before upload
 - **Third-party services**: The platform uses Supabase (database/auth/storage), Vercel (frontend hosting), and LLM APIs (OpenAI/Anthropic, etc.). Your prompts are sent to the LLM provider to generate simulation configurations
 
@@ -372,4 +404,4 @@ If you have questions or suggestions, please reach out through:
 
 ---
 
-*This guide was last updated on March 21, 2026. Platform features may be updated over time — refer to the actual interface for the latest information.*
+*This guide was last updated on November 17, 2026. Platform features may be updated over time — refer to the actual interface for the latest information.*

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import toast from 'react-hot-toast';
 import FileBrowser from './components/FileBrowser';
@@ -86,6 +86,21 @@ const strings = {
     caseUploadAutoOnly: '导入已有算例目前只支持自动模式',
     errorCaseImportFailed: '上传的算例没能导入。请确认 ZIP 里是一个完整的 OpenFOAM 算例（system/controlDict、constant/ 和 0/ 初始条件）；执行报告里写明了具体被拒的原因。',
     errorCaseTargetMismatch: '上传的算例是为另一个 OpenFOAM 版本写的。本平台运行 OpenFOAM Foundation v10，ESI/OpenCFD（v2xxx）或其他 Foundation 版本的算例通常需要先改字典。',
+    errorCaseArchiveRejected: '上传的算例压缩包无法使用：不是有效的 .zip、内容为空，或解压后超过平台的磁盘上限。请检查后重新打包上传。本次没有调用模型。',
+    errorCaseArchiveDownload: '平台没能从存储中取回您上传的算例压缩包。这是平台侧的问题——请重新提交，本次不计入每日额度。',
+    errorMeshDownload: '平台没能从存储中取回您上传的网格文件。这是平台侧的问题——请重新提交，本次不计入每日额度。',
+    errorPreRunNoProgress: '预运行连续几轮修复后报错完全没有变化，继续修复也不会有进展，已停止。可以查看文件和日志里的报错，补充需求后重新提交。',
+    errorPreRunExhausted: '预运行修复次数已用完，问题仍未解决。可以查看文件和日志里的报错，补充需求后重新提交。',
+    autoStages: {
+      auto_import: '导入算例中',
+      auto_meshing: '生成网格中',
+      auto_setup: '编写算例文件中',
+      auto_running: '仿真运行中',
+      auto_repairing: '修复问题中（第 {n} 轮）',
+      auto_visualizing: '生成可视化中',
+    },
+    heavyPromptHint: '这类问题（耦合、相变、自定义求解器等）通常要跑很久——Foam-Agent 有时会自己编写并编译求解器。建议把超时设为 120 分钟。',
+    heavyPromptSet120: '设为 120 分钟',
     preRunSettings: '执行设置',
     preRunHint: '（可选）选择执行模式和 Pre-Run 验证',
     preRunSteps: 'Pre-Run 步数',
@@ -243,6 +258,21 @@ const strings = {
     caseUploadAutoOnly: 'Importing an existing case is available in auto mode only',
     errorCaseImportFailed: 'The uploaded case could not be imported. Make sure the ZIP holds one complete OpenFOAM case (system/controlDict, constant/ and the 0/ initial conditions); the workflow report shows exactly what was rejected.',
     errorCaseTargetMismatch: 'The uploaded case is written for a different OpenFOAM version. This platform runs OpenFOAM Foundation v10; cases from ESI/OpenCFD (v2xxx) or other Foundation releases usually need dictionary changes first.',
+    errorCaseArchiveRejected: "The uploaded case archive can't be used: it is not a valid .zip, it is empty, or it unpacks to more than the platform's disk limit. Please check it and upload it again. No model was called for this run.",
+    errorCaseArchiveDownload: "The platform could not fetch your uploaded case archive from storage. This is a platform-side problem — please submit again; this run does not count toward your daily quota.",
+    errorMeshDownload: "The platform could not fetch your uploaded mesh file from storage. This is a platform-side problem — please submit again; this run does not count toward your daily quota.",
+    errorPreRunNoProgress: "The pre-run errors stayed exactly the same over several repair rounds, so further repairs would not help; the run was stopped. Check the errors in the files and logs, add detail to your request, and submit again.",
+    errorPreRunExhausted: "The pre-run used up its repair attempts without fixing the problem. Check the errors in the files and logs, add detail to your request, and submit again.",
+    autoStages: {
+      auto_import: 'Importing case',
+      auto_meshing: 'Generating mesh',
+      auto_setup: 'Writing case files',
+      auto_running: 'Running simulation',
+      auto_repairing: 'Fixing problems (round {n})',
+      auto_visualizing: 'Generating visualizations',
+    },
+    heavyPromptHint: 'Problems like this (coupled physics, phase change, custom solvers) often run long — Foam-Agent sometimes writes and compiles its own solver. A 120-minute timeout is recommended.',
+    heavyPromptSet120: 'Use 120 min',
     preRunSettings: 'Execution Settings',
     preRunHint: '(Optional) Choose execution mode and Pre-Run validation',
     preRunSteps: 'Pre-Run Steps',
@@ -364,10 +394,11 @@ const MODEL_VERSIONS = {
     { value: 'o4-mini', label: 'o4-mini (fast reasoning)' },
   ],
   'anthropic': [
-    { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6 (recommended)', isDefault: true },
-    { value: 'claude-opus-4-6', label: 'claude-opus-4-6 (most capable)' },
-    { value: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5 (fastest/cheapest)' },
-    { value: 'claude-sonnet-4-5-20250929', label: 'claude-sonnet-4-5' },
+    { value: 'claude-sonnet-5-5', label: 'claude-sonnet-5-5 (recommended)', isDefault: true },
+    { value: 'claude-opus-5-5', label: 'claude-opus-5-5 (most capable)' },
+    { value: 'claude-haiku-5-5', label: 'claude-haiku-5-5 (fastest/cheapest)' },
+    { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6' },
+    { value: 'claude-opus-4-6', label: 'claude-opus-4-6' },
   ],
   // DeepSeek V4 family (v4-pro / v4-flash) defaults to thinking mode, which
   // rejects tool_choice — incompatible with Foam-Agent's structured-output
@@ -438,9 +469,32 @@ export default function AISimulationTab({ session, language, storageUsage }) {
   // Queue info state (for showing position + elapsed time on queued tasks)
   const [queueInfo, setQueueInfo] = useState(null);
   const [now, setNow] = useState(Date.now());
+  const toastedStatus = useRef(new Map());  // sim id -> last status we toasted
+  // Seed from what is on screen, so a progress-only update to a task that was
+  // already running when the page loaded doesn't toast "running" again.
+  useEffect(() => {
+    simulations.forEach((sim) => toastedStatus.current.set(sim.id, sim.status));
+  }, [simulations]);
 
   const t = strings[language];
   const API_URL = import.meta.env.VITE_API_SERVER_URL;
+
+  // Controlled stages are plain keys; auto-mode progress from the worker is
+  // auto_<stage>, with the repair round appended as auto_repairing:<n>.
+  const stageLabel = (stage) => {
+    if (stage.startsWith('auto_')) {
+      const [key, round] = stage.split(':');
+      return (t.autoStages[key] || key).replace('{n}', round || '1');
+    }
+    return t.pipelineStages[stage] || stage;
+  };
+
+  // Coupled / phase-change / custom-solver requests regularly need more than
+  // the 60-minute default (case review 2026-11-15: one compiled its own solver
+  // and ran out of time at 40 min).
+  const HEAVY_PROMPT_RE = /耦合|相变|熔化|融化|凝固|冷凝|沸腾|蒸发|自定义求解器|自写求解器|流固|共轭传热|coupled|conjugate|phase[- ]change|melting|solidification|condensation|boiling|evaporation|custom solver|fsi\b|fluid[- ]structure/i;
+  const showHeavyPromptHint = HEAVY_PROMPT_RE.test(newPrompt)
+    && (parseInt(timeoutMinutes, 10) || 60) < 120;
 
   // --- Persistent settings (localStorage) ---
   const SETTINGS_KEY = `cfdqanda_settings_${session?.user?.id || 'anon'}`;
@@ -770,7 +824,13 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             setSimulations((prev) =>
               prev.map((sim) => sim.id === payload.new.id ? { ...sim, ...payload.new } : sim)
             );
-            toast.success(`${String(payload.new.id).substring(0,8)}... ${t.taskStatusUpdateToast}: ${payload.new.status}`);
+            // Updates also carry progress (pipeline_stage, every few minutes in
+            // auto mode); only a status change is worth a toast.
+            const prevStatus = toastedStatus.current.get(payload.new.id);
+            toastedStatus.current.set(payload.new.id, payload.new.status);
+            if (prevStatus !== payload.new.status) {
+              toast.success(`${String(payload.new.id).substring(0,8)}... ${t.taskStatusUpdateToast}: ${payload.new.status}`);
+            }
           }
         }
       )
@@ -1478,6 +1538,20 @@ export default function AISimulationTab({ session, language, storageUsage }) {
             onChange={(e) => setNewPrompt(e.target.value)}
             rows="8"
           />
+          {showHeavyPromptHint && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+              margin: '6px 0 0', padding: '8px 12px', fontSize: '0.82rem', lineHeight: 1.5,
+              borderRadius: '6px', border: '1px solid rgba(210, 153, 34, 0.4)',
+              background: 'var(--warning-subtle)', color: 'var(--text-primary)',
+            }}>
+              <span style={{ flex: '1 1 260px' }}>{t.heavyPromptHint}</span>
+              <button type="button" className="checkpoint-btn checkpoint-btn--browse"
+                onClick={() => setTimeoutMinutes('120')}>
+                {t.heavyPromptSet120}
+              </button>
+            </div>
+          )}
 
           {/* Prompt examples */}
           <div className="prompt-examples">
@@ -1585,7 +1659,8 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           </span>
                         );
                       })()}
-                      {sim.pipeline_mode === 'controlled' && sim.pipeline_stage && (
+                      {sim.pipeline_stage && (sim.pipeline_mode === 'controlled'
+                        || (sim.status === 'running' && sim.pipeline_stage.startsWith('auto_'))) && (
                         <span style={{
                           fontSize: '0.75rem',
                           fontFamily: 'var(--font-mono)',
@@ -1594,7 +1669,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           padding: '2px 8px',
                           borderRadius: '10px',
                         }}>
-                          {t.pipelineStages[sim.pipeline_stage] || sim.pipeline_stage}
+                          {stageLabel(sim.pipeline_stage)}
                         </span>
                       )}
                       {storageUsage?.per_task?.[String(sim.id)] && (
@@ -1731,6 +1806,11 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                           : sim.result_data.error_category === 'platform_resources' ? t.errorPlatformResources
                           : sim.result_data.error_category === 'case_import_failed' ? t.errorCaseImportFailed
                           : sim.result_data.error_category === 'case_target_mismatch' ? t.errorCaseTargetMismatch
+                          : sim.result_data.error_category === 'case_archive_rejected' ? t.errorCaseArchiveRejected
+                          : sim.result_data.error_category === 'case_archive_download_failed' ? t.errorCaseArchiveDownload
+                          : sim.result_data.error_category === 'mesh_download_failed' ? t.errorMeshDownload
+                          : sim.result_data.error_category === 'pre_run_no_progress' ? t.errorPreRunNoProgress
+                          : sim.result_data.error_category === 'pre_run_exhausted' ? t.errorPreRunExhausted
                           : sim.result_data.error_category === 'timeout' ? t.errorTimeout
                           : sim.result_data.error_category === 'oom' ? t.errorOOM
                           : sim.result_data.error_category === 'disk_exceeded' ? t.errorDiskExceeded
