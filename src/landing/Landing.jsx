@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import FlowField from './FlowField';
 import AgentDemo from './AgentDemo';
+import Traction from './Traction';
+import { USERS, INSTITUTIONS, TASKS_FLOOR } from './traction';
 import { CountUp, LangToggle, Reveal } from './parts';
 import './landing.css';
 
@@ -15,6 +17,7 @@ const S = {
     h1a: '一句话，跑出', h1em: '收敛', h1b: '的 OpenFOAM 算例',
     sub: 'Foam-Agent 用多个智能体完成规划、网格、边界条件、求解和出错修复。在浏览器里描述你的流动问题，几分钟后拿到能下载、能复现的完整算例和结果。',
     ctaStart: '免费注册', ctaDemo: '看它怎么工作',
+    trust: (u, i, n) => `${u} 位用户 · ${i} 家机构 · ${n}+ 次仿真`,
     models: '可选模型', modelsList: ['GPT-5.6-sol（默认）', 'Claude Opus 5.5 (high) / Sonnet', '自带 API Key'],
     authTitle: '登录 Foam-Agent', authSub: '与 cfdqanda.com 通用同一账号',
     statsTitle: '公开基准上的成绩',
@@ -52,6 +55,7 @@ const S = {
     h1a: 'From one sentence to a', h1em: 'converged', h1b: 'OpenFOAM case',
     sub: 'Foam-Agent’s agents plan the case, build the mesh, set boundary conditions, run the solver and repair what breaks. Describe your flow in the browser and get a complete, reproducible case with results in minutes.',
     ctaStart: 'Sign up free', ctaDemo: 'See how it works',
+    trust: (u, i, n) => `${u} users · ${i} institutions · ${n}+ simulations`,
     models: 'Models', modelsList: ['GPT-5.6-sol (default)', 'Claude Opus 5.5 (high) / Sonnet', 'Bring your own key'],
     authTitle: 'Log in to Foam-Agent', authSub: 'One account for foam-agent.com and cfdqanda.com',
     statsTitle: 'On a public benchmark',
@@ -131,6 +135,9 @@ export default function Landing({ language, setLanguage, onSignup, onGuide, onPr
             <button type="button" className="lp-btn lp-btn-primary" onClick={signup}>{t.ctaStart}</button>
             <button type="button" className="lp-btn lp-btn-ghost" onClick={toDemo}>{t.ctaDemo} ↓</button>
           </Reveal>
+          <Reveal className="lp-trust" delay={280}>
+            <span className="lp-trust-dot" />{t.trust(USERS, INSTITUTIONS, TASKS_FLOOR)}
+          </Reveal>
           <Reveal className="lp-models" delay={320}>
             <span>{t.models}</span>
             {t.modelsList.map((m) => <span key={m} className="lp-chip">{m}</span>)}
@@ -150,6 +157,8 @@ export default function Landing({ language, setLanguage, onSignup, onGuide, onPr
           </div>
         </aside>
       </main>
+
+      <Traction language={language} />
 
       <section className="lp-section">
         <Reveal as="h2" className="lp-h2">{t.statsTitle}</Reveal>
