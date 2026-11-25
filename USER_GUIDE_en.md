@@ -125,7 +125,7 @@ Click "Model Selection" to expand the settings panel. The platform offers two mo
 
 - **Cost**: Free, covered by the platform
 - **Limit**: 10 tasks per user per day (resets at UTC midnight)
-- **Available models**: gpt-5.6-sol (default, recommended), gpt-5.5, gpt-5.4
+- **Available models**: gpt-6-luna (default, recommended: economical and strong, and the model behind Foam-Agent's published benchmark), gpt-5.6-sol, gpt-5.5, gpt-5.4
 - **Codex Token** (optional): If you have your own ChatGPT Codex Token, enter it to bypass the platform quota
 - **Best for**: Most users, no extra configuration needed
 
@@ -329,8 +329,8 @@ When using Interactive mode, you can rate each checkpoint separately:
 | Item | Limit |
 |------|-------|
 | Total storage per user | **2 GB** |
-| Completed task retention | **90 days** before automatic deletion |
-| Failed/cancelled task retention | **30 days** before automatic deletion |
+| Task retention | Completed, failed and cancelled tasks are **all kept long-term**; nothing is deleted by age |
+| Deleting a task | You can delete any task yourself; it can be restored for 7 days, then it is purged |
 
 > **Tip**: Your current cloud storage usage is displayed in the top-right corner of the page. If you run low on storage, you can manually delete old tasks to free up space. Each task card has a "Delete" button in the upper-right corner. You have an 8-second undo window after deletion.
 
@@ -338,7 +338,7 @@ When using Interactive mode, you can rate each checkpoint separately:
 
 | Model | Cost | Limit |
 |-------|------|-------|
-| gpt-5.6-sol (default, recommended) | Free | 10 per user per day |
+| gpt-6-luna (default, recommended) | Free | 10 per user per day |
 | gpt-5.5 / gpt-5.4 | Free | 10 per user per day |
 | Claude Opus 5.5 (high) | Free | 2 per user per day |
 | Claude Sonnet | Free | 5 per user per day |
@@ -387,7 +387,7 @@ Regarding your data, we commit to the following:
 
 - **API Keys**: Used only for the current task; immediately deleted from the database after the worker reads them
 - **Uploaded files**: Uploaded .msh meshes and .zip cases are stored on Supabase cloud and deleted together with the associated task
-- **Simulation data**: Stored on Supabase cloud; completed tasks are retained for 90 days, failed/cancelled tasks for 30 days, and deleted tasks are permanently purged after 7 days
+- **Simulation data**: Stored on Supabase cloud; tasks are kept long-term and not deleted by age; tasks you delete yourself are permanently purged after 7 days
 - **Log sanitization**: API keys in log files are automatically replaced with `[REDACTED]` before upload
 - **Third-party services**: The platform uses Supabase (database/auth/storage), Vercel (frontend hosting), and LLM APIs (OpenAI/Anthropic, etc.). Your prompts are sent to the LLM provider to generate simulation configurations
 

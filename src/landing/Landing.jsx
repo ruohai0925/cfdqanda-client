@@ -13,21 +13,22 @@ const PAPER_LABEL = 'Computer Methods in Applied Mechanics and Engineering, 2026
 const S = {
   zh: {
     guide: '用户指南', github: 'GitHub', paper: '论文', login: '登录',
-    pill: 'FoamBench 2026-11 · 基础集执行成功率 93.6%',
+    pill: 'FoamBench 2026-11 · gpt-6-luna · 基础集执行成功率 93.6%',
     h1a: '一句话，跑出', h1em: '收敛', h1b: '的 OpenFOAM 算例',
     sub: 'Foam-Agent 用多个智能体完成规划、网格、边界条件、求解和出错修复。在浏览器里描述你的流动问题，几分钟后拿到能下载、能复现的完整算例和结果。',
     ctaStart: '免费注册', ctaDemo: '看它怎么工作',
     trust: (u, i, n) => `${u} 位用户 · ${i} 家机构 · ${n}+ 次仿真`,
-    models: '可选模型', modelsList: ['GPT-5.6-sol（默认）', 'Claude Opus 5.5 (high) / Sonnet', '自带 API Key'],
+    models: '可选模型', modelsList: ['gpt-6-luna（默认）', 'Claude Opus 5.5 (high) / Sonnet', '自带 API Key'],
     authTitle: '登录 Foam-Agent', authSub: '与 cfdqanda.com 通用同一账号',
-    statsTitle: '公开基准上的成绩',
+    statsTitle: '经济的模型，出色的结果',
+    statsSub: '我们没有去追最贵的模型：公开基准和本平台默认用的都是经济型的 gpt-6-luna。花得少，FoamBench 基础集的执行成功率依然有 93.6%。',
     stats: [
       { v: 93.64, d: 2, s: '%', k: '执行成功率', n: 'FoamBench 基础集 · 110 个算例' },
       { v: 72.73, d: 2, s: '%', k: '物理正确率', n: '基础集 · NMSE < 0.1' },
       { v: 75, d: 0, s: '%', k: '执行成功率', n: 'FoamBench 进阶集 · 16 个算例' },
       { v: 5.5, d: 1, s: ' 分钟', k: '一句话到求解完成', n: '顶盖驱动方腔，本平台生产环境实测' },
     ],
-    statsNote: '基准数据来自 Foam-Agent 官方 README（2026-11-12，commit 8b34029，失败算例计入分母）；本平台默认模型与基准所用模型不同，成绩仅供参考。',
+    statsNote: '基准数据来自 Foam-Agent 官方 README（2026-11-12，commit 8b34029，模型 gpt-6-luna，失败算例计入分母）；本平台默认模型同为 gpt-6-luna。',
     featTitle: '你描述问题，剩下的交给它',
     feats: [
       { i: '◎', h: '自然语言建模', p: '中文或英文描述几何、物性、边界和求解目标，自动选求解器、写全 0/ constant/ system/。' },
@@ -51,21 +52,22 @@ const S = {
   },
   en: {
     guide: 'Guide', github: 'GitHub', paper: 'Paper', login: 'Log in',
-    pill: 'FoamBench 2026-11 · 93.6% execution success (Basic)',
+    pill: 'FoamBench 2026-11 · gpt-6-luna · 93.6% execution success (Basic)',
     h1a: 'From one sentence to a', h1em: 'converged', h1b: 'OpenFOAM case',
     sub: 'Foam-Agent’s agents plan the case, build the mesh, set boundary conditions, run the solver and repair what breaks. Describe your flow in the browser and get a complete, reproducible case with results in minutes.',
     ctaStart: 'Sign up free', ctaDemo: 'See how it works',
     trust: (u, i, n) => `${u} users · ${i} institutions · ${n}+ simulations`,
-    models: 'Models', modelsList: ['GPT-5.6-sol (default)', 'Claude Opus 5.5 (high) / Sonnet', 'Bring your own key'],
+    models: 'Models', modelsList: ['gpt-6-luna (default)', 'Claude Opus 5.5 (high) / Sonnet', 'Bring your own key'],
     authTitle: 'Log in to Foam-Agent', authSub: 'One account for foam-agent.com and cfdqanda.com',
-    statsTitle: 'On a public benchmark',
+    statsTitle: 'An economical model, excellent results',
+    statsSub: 'We do not chase the most expensive model: the public benchmark and this site’s default both run the economical gpt-6-luna. It costs less and still executes 93.6% of FoamBench Basic cases.',
     stats: [
       { v: 93.64, d: 2, s: '%', k: 'execution success', n: 'FoamBench Basic · 110 cases' },
       { v: 72.73, d: 2, s: '%', k: 'physically correct', n: 'Basic · NMSE < 0.1' },
       { v: 75, d: 0, s: '%', k: 'execution success', n: 'FoamBench Advanced · 16 cases' },
       { v: 5.5, d: 1, s: ' min', k: 'sentence to solved case', n: 'lid-driven cavity, measured on this site' },
     ],
-    statsNote: 'Benchmark figures are from the Foam-Agent README (2026-11-12, commit 8b34029; failures stay in the denominator). This site’s default model differs from the benchmark run, so treat them as indicative.',
+    statsNote: 'Benchmark figures are from the Foam-Agent README (2026-11-12, commit 8b34029, model gpt-6-luna; failures stay in the denominator). This site’s default model is the same gpt-6-luna.',
     featTitle: 'You describe the problem. It does the rest.',
     feats: [
       { i: '◎', h: 'Natural-language setup', p: 'Describe geometry, properties, boundaries and goals in English or Chinese; it picks a solver and writes 0/, constant/ and system/.' },
@@ -162,6 +164,7 @@ export default function Landing({ language, setLanguage, onSignup, onGuide, onPr
 
       <section className="lp-section">
         <Reveal as="h2" className="lp-h2">{t.statsTitle}</Reveal>
+        <Reveal as="p" className="lp-section-sub">{t.statsSub}</Reveal>
         <div className="lp-stats">
           {t.stats.map((s, i) => (
             <Reveal key={s.n} className="lp-stat" delay={i * 90}>
