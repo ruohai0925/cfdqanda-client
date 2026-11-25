@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from './supabaseClient'
 import toast from 'react-hot-toast'
-import { Turnstile } from '@marsidev/react-turnstile'
+import CaptchaBox from './CaptchaBox'
 
 // --- Language dictionary ---
 const strings = {
@@ -262,15 +262,7 @@ export default function Auth({ language, setLanguage, initialMode = 'login', bar
 
           {/* Cloudflare Turnstile CAPTCHA */}
           {TURNSTILE_SITE_KEY && (
-            <div style={{ margin: '12px 0' }}>
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={(token) => setCaptchaToken(token)}
-                onExpire={() => { setCaptchaToken(''); turnstileRef.current?.reset(); }}
-                options={{ theme: 'dark', size: 'normal' }}
-              />
-            </div>
+            <CaptchaBox siteKey={TURNSTILE_SITE_KEY} language={language} turnstileRef={turnstileRef} onToken={setCaptchaToken} />
           )}
 
           <button className="button-block" disabled={loading}>
@@ -320,15 +312,7 @@ export default function Auth({ language, setLanguage, initialMode = 'login', bar
 
           {/* Cloudflare Turnstile CAPTCHA */}
           {TURNSTILE_SITE_KEY && (
-            <div style={{ margin: '12px 0' }}>
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={(token) => setCaptchaToken(token)}
-                onExpire={() => { setCaptchaToken(''); turnstileRef.current?.reset(); }}
-                options={{ theme: 'dark', size: 'normal' }}
-              />
-            </div>
+            <CaptchaBox siteKey={TURNSTILE_SITE_KEY} language={language} turnstileRef={turnstileRef} onToken={setCaptchaToken} />
           )}
 
           <button className="button-block" disabled={loading || !privacyAccepted || !invitationCode.trim()}>
@@ -351,15 +335,7 @@ export default function Auth({ language, setLanguage, initialMode = 'login', bar
 
           {/* Cloudflare Turnstile CAPTCHA */}
           {TURNSTILE_SITE_KEY && (
-            <div style={{ margin: '12px 0' }}>
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={(token) => setCaptchaToken(token)}
-                onExpire={() => { setCaptchaToken(''); turnstileRef.current?.reset(); }}
-                options={{ theme: 'dark', size: 'normal' }}
-              />
-            </div>
+            <CaptchaBox siteKey={TURNSTILE_SITE_KEY} language={language} turnstileRef={turnstileRef} onToken={setCaptchaToken} />
           )}
 
           <button className="button-block" disabled={loading}>
