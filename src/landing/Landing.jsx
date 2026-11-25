@@ -47,11 +47,11 @@ const S = {
       { h: '查看与下载', p: '在线浏览文件与云图，下载完整算例。' },
     ],
     endTitle: '现在就把你的第一个算例交给它', endBtn: '免费注册',
-    footDiag: '算例已经跑过但结果可疑？', footDiagLink: '在 cfdqanda.com 申请专家诊断', privacy: '隐私政策', guideFull: '用户指南（含视频）',
+    footDiag: '算例已经跑过但结果可疑？', footDiagLink: '在 cfdqanda.com 申请专家诊断', privacy: '隐私政策',
     close: '关闭',
   },
   en: {
-    guide: 'Guide', github: 'GitHub', paper: 'Paper', login: 'Log in',
+    guide: 'User Guide', github: 'GitHub', paper: 'Paper', login: 'Log in',
     pill: 'FoamBench 2026-11 · gpt-6-luna · 93.6% execution success (Basic)',
     h1a: 'From one sentence to a', h1em: 'converged', h1b: 'OpenFOAM case',
     sub: 'Foam-Agent’s agents plan the case, build the mesh, set boundary conditions, run the solver and repair what breaks. Describe your flow in the browser and get a complete, reproducible case with results in minutes.',
@@ -86,7 +86,7 @@ const S = {
       { h: 'Inspect and download', p: 'Browse files and plots online; download the whole case.' },
     ],
     endTitle: 'Hand it your first case today', endBtn: 'Sign up free',
-    footDiag: 'Already ran a case and the result looks wrong?', footDiagLink: 'Get an expert diagnosis at cfdqanda.com', privacy: 'Privacy Policy', guideFull: 'User Guide (incl. video)',
+    footDiag: 'Already ran a case and the result looks wrong?', footDiagLink: 'Get an expert diagnosis at cfdqanda.com', privacy: 'Privacy Policy',
     close: 'Close',
   },
 };
@@ -221,7 +221,7 @@ export default function Landing({ language, setLanguage, onSignup, onGuide, onPr
       <footer className="lp-foot">
         <div>{t.footDiag} <a href="https://cfdqanda.com" target="_blank" rel="noopener noreferrer">{t.footDiagLink} ↗</a></div>
         <div className="lp-foot-links">
-          <a href="#guide" onClick={onGuide}>{t.guideFull}</a>
+          <a href="#guide" onClick={onGuide}>{t.guide}</a>
           <a href="#privacy" onClick={onPrivacy}>{t.privacy}</a>
           <a href={GITHUB} target="_blank" rel="noopener noreferrer">GitHub</a>
           <a href={PAPER} target="_blank" rel="noopener noreferrer">{t.paper}</a>
