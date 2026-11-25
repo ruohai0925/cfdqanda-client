@@ -134,7 +134,7 @@ Click "Model Selection" to expand the settings panel. The platform offers two mo
 ### 4.1b Claude (Platform-Provided)
 
 - **Cost**: Free, covered by the platform
-- **Models**: Opus (default, most capable, 2 per user per day), Sonnet (balanced, 5 per user per day)
+- **Models**: Opus 5.5 (default, most capable, high reasoning effort, 2 per user per day), Sonnet (balanced, 5 per user per day)
 - If the platform's Claude quota runs out, the task fails with that reason and doesn't count toward your daily tasks; use the default model or BYOK instead
 
 ### 4.2 Bring Your Own Key (BYOK)
@@ -340,7 +340,7 @@ When using Interactive mode, you can rate each checkpoint separately:
 |-------|------|-------|
 | gpt-5.6-sol (default, recommended) | Free | 10 per user per day |
 | gpt-5.5 / gpt-5.4 | Free | 10 per user per day |
-| Claude Opus | Free | 2 per user per day |
+| Claude Opus 5.5 (high) | Free | 2 per user per day |
 | Claude Sonnet | Free | 5 per user per day |
 
 These models are provided from the platform's subscriptions; tasks that fail for platform-side reasons (quota exhausted, platform faults) don't count toward the daily limit. Model costs under BYOK mode are borne by the user.

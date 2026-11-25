@@ -45,7 +45,7 @@ const strings = {
     modelChoiceDefaultDesc: '平台提供 · 每人每天 {limit} 次',
     dailyUsage: '今日已用 {used}/{limit} 次',
     dailyUsageExhausted: '今日额度已用完，请明天再试或使用 BYOK',
-    modelChoiceClaude: 'Claude (Opus)',
+    modelChoiceClaude: 'Claude (Opus 5.5)',
     modelChoiceClaudeDesc: '平台提供 · 每人每天 Opus 2 次 / Sonnet 5 次 · 高峰时可能排队',
     modelChoiceBYOK: '自带 API Key (BYOK)',
     modelChoiceBYOKDesc: '使用自己的 API Key，不受平台额度限制',
@@ -217,7 +217,7 @@ const strings = {
     modelChoiceDefaultDesc: 'Platform-provided · {limit} tasks/day per user',
     dailyUsage: 'Used {used}/{limit} today',
     dailyUsageExhausted: 'Daily quota exhausted. Try again tomorrow or use BYOK.',
-    modelChoiceClaude: 'Claude (Opus)',
+    modelChoiceClaude: 'Claude (Opus 5.5)',
     modelChoiceClaudeDesc: 'Platform-provided · daily per user: Opus ×2, Sonnet ×5 · may queue at peak',
     modelChoiceBYOK: 'Bring Your Own Key (BYOK)',
     modelChoiceBYOKDesc: 'Use your own API key, no platform quota limits',
@@ -1143,7 +1143,7 @@ export default function AISimulationTab({ session, language, storageUsage }) {
                       style={{ width: '100%', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}>
                       {/* haiku removed 2026-08-01: fails even the simplest cavity case
                           (stuck in reviewer rewrite loop until timeout, task #628) */}
-                      <option value="">Opus ({language === 'zh' ? '默认，最强' : 'default, most capable'})</option>
+                      <option value="">Opus 5.5 · high ({language === 'zh' ? '默认，最强' : 'default, most capable'})</option>
                       <option value="sonnet">Sonnet ({language === 'zh' ? '均衡' : 'balanced'})</option>
                     </select>
                   </div>

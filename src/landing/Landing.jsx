@@ -5,7 +5,8 @@ import { CountUp, LangToggle, Reveal } from './parts';
 import './landing.css';
 
 const GITHUB = 'https://github.com/csml-rpi/Foam-Agent';
-const PAPER = 'https://arxiv.org/abs/2505.04997';
+const PAPER = 'https://www.sciencedirect.com/science/article/abs/pii/S004578252600544X';
+const PAPER_LABEL = 'Computer Methods in Applied Mechanics and Engineering, 2026';
 
 const S = {
   zh: {
@@ -14,7 +15,7 @@ const S = {
     h1a: '一句话，跑出', h1em: '收敛', h1b: '的 OpenFOAM 算例',
     sub: 'Foam-Agent 用多个智能体完成规划、网格、边界条件、求解和出错修复。在浏览器里描述你的流动问题，几分钟后拿到能下载、能复现的完整算例和结果。',
     ctaStart: '免费注册', ctaDemo: '看它怎么工作',
-    models: '可选模型', modelsList: ['GPT-5.6（默认）', 'Claude Opus / Sonnet', '自带 API Key'],
+    models: '可选模型', modelsList: ['GPT-5.6-sol（默认）', 'Claude Opus 5.5 (high) / Sonnet', '自带 API Key'],
     authTitle: '登录 Foam-Agent', authSub: '与 cfdqanda.com 通用同一账号',
     statsTitle: '公开基准上的成绩',
     stats: [
@@ -51,7 +52,7 @@ const S = {
     h1a: 'From one sentence to a', h1em: 'converged', h1b: 'OpenFOAM case',
     sub: 'Foam-Agent’s agents plan the case, build the mesh, set boundary conditions, run the solver and repair what breaks. Describe your flow in the browser and get a complete, reproducible case with results in minutes.',
     ctaStart: 'Sign up free', ctaDemo: 'See how it works',
-    models: 'Models', modelsList: ['GPT-5.6 (default)', 'Claude Opus / Sonnet', 'Bring your own key'],
+    models: 'Models', modelsList: ['GPT-5.6-sol (default)', 'Claude Opus 5.5 (high) / Sonnet', 'Bring your own key'],
     authTitle: 'Log in to Foam-Agent', authSub: 'One account for foam-agent.com and cfdqanda.com',
     statsTitle: 'On a public benchmark',
     stats: [
@@ -183,7 +184,7 @@ export default function Landing({ language, setLanguage, onSignup, onGuide, onPr
           <button type="button" className="lp-figure-btn" onClick={() => setZoom(true)} aria-label={t.archAlt}>
             <img src="/foam-agent-overview.webp" alt={t.archAlt} loading="lazy" width="1800" height="1065" />
           </button>
-          <figcaption>{t.archCap} <a href={PAPER} target="_blank" rel="noopener noreferrer">arXiv:2505.04997</a></figcaption>
+          <figcaption>{t.archCap} <a href={PAPER} target="_blank" rel="noopener noreferrer">{PAPER_LABEL}</a></figcaption>
         </Reveal>
       </section>
 
@@ -211,7 +212,7 @@ export default function Landing({ language, setLanguage, onSignup, onGuide, onPr
           <a href="#guide" onClick={onGuide}>{t.guideFull}</a>
           <a href="#privacy" onClick={onPrivacy}>{t.privacy}</a>
           <a href={GITHUB} target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a href={PAPER} target="_blank" rel="noopener noreferrer">arXiv</a>
+          <a href={PAPER} target="_blank" rel="noopener noreferrer">{t.paper}</a>
         </div>
       </footer>
 
