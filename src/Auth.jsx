@@ -85,7 +85,7 @@ const strings = {
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
-export default function Auth({ language, setLanguage, initialMode = 'login' }) {
+export default function Auth({ language, setLanguage, initialMode = 'login', bare = false }) {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -243,13 +243,13 @@ export default function Auth({ language, setLanguage, initialMode = 'login' }) {
 
   return (
     <div aria-live="polite">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      {!bare && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 className="header">{t.title}</h1>
         <div>
           <button onClick={() => setLanguage('en')} disabled={language==='en'} style={{ marginRight: '5px', padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='en' ? 'var(--accent)' : 'transparent', color: language==='en' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>EN</button>
           <button onClick={() => setLanguage('zh')} disabled={language==='zh'} style={{ padding: '4px 8px', border: '1px solid var(--border)', borderRadius: '4px', background: language==='zh' ? 'var(--accent)' : 'transparent', color: language==='zh' ? '#ffffff' : 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>ZH</button>
         </div>
-      </div>
+      </div>}
       <p className="description">{description}</p>
 
       {/* === Login Form === */}

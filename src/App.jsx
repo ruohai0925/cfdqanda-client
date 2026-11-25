@@ -7,6 +7,7 @@ import MainLayout from './MainLayout'
 import PrivacyPolicy from './PrivacyPolicy'
 import PlatformFeedback from './PlatformFeedback'
 import InvitationBoard from './InvitationBoard'
+import Landing from './landing/Landing'
 const UserGuide = lazy(() => import('./UserGuide'))
 
 const footerStrings = {
@@ -16,7 +17,13 @@ const footerStrings = {
 
 function App() {
   const [session, setSession] = useState(null)
-  const [language, setLanguage] = useState('en')
+  const [language, setLanguage] = useState(
+    () => {
+      const q = new URLSearchParams(window.location.search).get('lang')
+      if (q === 'zh' || q === 'en') return q
+      return (navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'
+    }
+  )
   const [currentPage, setCurrentPage] = useState(
     window.location.hash === '#privacy' ? 'privacy'
     : window.location.hash === '#guide' ? 'guide'
@@ -142,19 +149,18 @@ function App() {
   }
 
   return (
-    <div className="container" style={{ padding: '50px 20px 100px 20px' }}>
+    <>
       <Toaster position="top-center" />
-      <Auth language={language} setLanguage={setLanguage} initialMode={authMode} />
-      <footer className="app-footer">
-        <a href="#guide" onClick={navigateToGuide}>
-          {footerStrings[language].guideLink}
-        </a>
-        <span className="footer-sep">·</span>
-        <a href="#privacy" onClick={navigateToPrivacy}>
-          {footerStrings[language].privacyLink}
-        </a>
-      </footer>
-    </div>
+      <Landing
+        language={language}
+        setLanguage={setLanguage}
+        onSignup={() => setAuthMode('signup')}
+        onGuide={navigateToGuide}
+        onPrivacy={navigateToPrivacy}
+      >
+        <Auth key={authMode} language={language} setLanguage={setLanguage} initialMode={authMode} bare />
+      </Landing>
+    </>
   )
 }
 
