@@ -20,7 +20,7 @@ const strings = {
 };
 
 // Embed via youtube-nocookie so visitors aren't tracked until they hit play.
-const TUTORIAL_EMBED_URL = 'https://www.youtube-nocookie.com/embed/_Fveasp8QHI';
+const TUTORIAL_EMBED_URL = 'https://www.youtube-nocookie.com/embed/e7gUsmsGaC4';
 
 export default function UserGuide({ language, onBack }) {
   const t = strings[language];
