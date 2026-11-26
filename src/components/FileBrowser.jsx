@@ -16,6 +16,7 @@ const fileBrowserStrings = {
     loadError: '加载文件失败',
     noPreview: '此文件类型不支持预览，请下载查看',
     empty: '暂无文件',
+    fileList: '文件列表',
     fileSize: '文件大小',
     copyText: '复制文本',
     copySuccess: '已复制到剪贴板',
@@ -50,6 +51,7 @@ const fileBrowserStrings = {
     loadError: 'Failed to load file',
     noPreview: 'This file type cannot be previewed. Please download to view.',
     empty: 'No files',
+    fileList: 'Files',
     fileSize: 'File Size',
     copyText: 'Copy Text',
     copySuccess: 'Copied to clipboard',
@@ -601,7 +603,7 @@ export default function FileBrowser({ jobId, accessToken, fileTree, storageBaseP
             onClick={(e) => e.stopPropagation()} // 阻止点击事件传播到overlay
             onMouseDown={(e) => e.stopPropagation()} // 阻止mousedown事件传播
           >
-            <h3>文件列表</h3>
+            <h3>{t.fileList}</h3>
             {fileTreeData ? (
               renderTreeNode(fileTreeData)
             ) : (
